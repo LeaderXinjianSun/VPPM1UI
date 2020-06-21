@@ -5,10 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using HslCommunication;
 using HslCommunication.Profinet.Melsec;
-//using BingLibrary.hjb.file;
+using BingLibrary.hjb.file;
+//using BingLibrary.hjb.tools;
 using System.Diagnostics;
 
-namespace SXJLibrary
+namespace SXJ
 {
     public class Fx5u
     {
@@ -51,6 +52,7 @@ namespace SXJLibrary
                 _Connect = false;
                 Console.WriteLine("连接失败");
             }
+            //Async.RunFuncAsync(Run, null);
         }
         /// <summary>
         /// 读双字
@@ -182,6 +184,35 @@ namespace SXJLibrary
             {
                 _Connect = false;
             }
-        }        
+        }
+        private void Run()
+        {
+            Stopwatch sw = new Stopwatch();
+            while (true)
+            {
+                sw.Restart();
+                OperateResult<bool[]> read = melsec_net.ReadBool("M2000", 100);
+                if (read.IsSuccess)
+                {
+                    _Connect = true;
+                    FX5UIN = read.Content;
+                    OperateResult write = melsec_net.Write("M2500", FX5UOUT);
+                    if (write.IsSuccess)
+                    {
+                        _Connect = true;
+                    }
+                    else
+                    {
+                        _Connect = false;
+                    }
+                }
+                else
+                {
+                    _Connect = false;
+                }
+                System.Threading.Thread.Sleep(20);
+                SWms = sw.ElapsedMilliseconds;
+            }
+        }
     }
 }

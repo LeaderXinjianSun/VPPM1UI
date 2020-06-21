@@ -4,9 +4,38 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfApp1"
+        xmlns:Views="clr-namespace:WpfApp1.View"
         mc:Ignorable="d"
-        Title="VPP上料机PLC-机械手互刷工具" Height="600" Width="800">
+        Title="VPP上料机PLC-机械手互刷工具" Icon="swimming_64px_1277751_easyicon.net.ico"
+        Height="600" Width="800" WindowStartupLocation ="CenterScreen" ResizeMode="CanResize">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="View\Dictionary1.xaml"></ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
     <Grid>
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Top" />
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition Height="30"></RowDefinition>
+        </Grid.RowDefinitions>
+        <Menu VerticalAlignment="Center">
+            <MenuItem Header="主页" Command="{Binding MenuActionCommand}" CommandParameter="0"></MenuItem>
+            <!--<MenuItem Header="参数" Command="{Binding MenuActionCommand}" CommandParameter="1"></MenuItem>-->
+        </Menu>
+        <Views:HomePage Grid.Row="1"></Views:HomePage>
+        <StatusBar Grid.Row="2">
+            <StatusBarItem>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center">PLC</TextBlock>
+                    <Ellipse Style="{StaticResource EllipseStatusPLC}"></Ellipse>
+                </StackPanel>
+            </StatusBarItem>
+            <StatusBarItem>
+                <TextBlock Text="{Binding Cycle,StringFormat=Cycle:{0}ms}"></TextBlock>
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </Window>
