@@ -233,7 +233,7 @@ namespace WpfApp1.ViewModel
                 }
                 else
                 {
-                    AddMessage("VPP贴膜下料机报警.xlsx 文件不存在");
+                    AddMessage("VPP报警.xlsx 文件不存在");
                 }
             }
             catch (Exception ex)
@@ -383,7 +383,16 @@ namespace WpfApp1.ViewModel
                                         mysql.executeQuery(stm);
                                     }
                                     mysql.DisConnect();
-                                    fx5U.SetM("M999", res1);
+                                    fx5U.SetMultiM("M401", new bool[2] { false, false });
+                                    if (res1)
+                                    {
+                                        fx5U.SetM("M401", true);
+                                    }
+                                    else
+                                    {
+                                        fx5U.SetM("M402", true);
+                                    }
+                                    
                                 }
                             }
                         }
@@ -448,10 +457,11 @@ namespace WpfApp1.ViewModel
                 if (cout2++ > 600)
                 {
                     cout2 = 0;
+                    fx5U.SetM("M400", true);
                     #region 心跳
                     try
                     {
-                        int item = fx5U.ReadW("D99");
+                        int item = fx5U.ReadW("D300");
                         string Status = "";
                         switch (item)
                         {
@@ -499,7 +509,7 @@ namespace WpfApp1.ViewModel
                 //写PLC
                 fx5U.SetMultiM("M2200", PLCOUT);
                 //读报警
-                M300 = fx5U.ReadMultiM("M300", 64);
+                M300 = fx5U.ReadMultiM("M3200", 800);
             }
         }
         private void AddMessage(string str)
