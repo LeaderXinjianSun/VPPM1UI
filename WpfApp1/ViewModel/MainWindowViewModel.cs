@@ -322,7 +322,7 @@ namespace WpfApp1.ViewModel
         }
         async void Run()
         {
-            int count1 = 0, cout2 = 0;
+            int count1 = 0, oldMinute = -1;
             string CurrentAlarm = "";
             string MODE = "1";
             int CardStatus = 1, cardret = 1;
@@ -407,6 +407,8 @@ namespace WpfApp1.ViewModel
                     #region 报警记录
                     try
                     {
+                        //读报警
+                        M300 = fx5U.ReadMultiM("M3200", 800);
                         if (M300 != null && StatusPLC)
                         {
                             for (int i = 0; i < AlarmList.Count; i++)
@@ -414,7 +416,7 @@ namespace WpfApp1.ViewModel
                                 if (M300[i] != AlarmList[i].State && AlarmList[i].Content != "Null")
                                 {
                                     AlarmList[i].State = M300[i];
-                                    if (AlarmList[i].State)
+                                     if (AlarmList[i].State)
                                     {
                                         AlarmList[i].Start = DateTime.Now;
                                         AlarmList[i].End = DateTime.Now;
@@ -448,15 +450,15 @@ namespace WpfApp1.ViewModel
 
                         }
                     }
-                    catch
+                    catch (Exception ex)
                     {
-
+                        Console.WriteLine(ex.Message);
                     }
                     #endregion
                 }
-                if (cout2++ > 600)
+                if (DateTime.Now.Minute != oldMinute)
                 {
-                    cout2 = 0;
+                    oldMinute = DateTime.Now.Minute;
                     fx5U.SetM("M400", true);
                     #region 心跳
                     try
@@ -508,8 +510,7 @@ namespace WpfApp1.ViewModel
                 PLCIN = fx5U.ReadMultiM("M2300", 100);
                 //写PLC
                 fx5U.SetMultiM("M2200", PLCOUT);
-                //读报警
-                M300 = fx5U.ReadMultiM("M3200", 800);
+
             }
         }
         private void AddMessage(string str)
