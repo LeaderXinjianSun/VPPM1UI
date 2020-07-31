@@ -4,9 +4,11 @@ using BingLibrary.hjb.file;
 using BingLibrary.hjb.net;
 using Microsoft.Practices.Prism.Commands;
 using Microsoft.Practices.Prism.ViewModel;
+using Newtonsoft.Json;
 using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -132,11 +134,45 @@ namespace WpfApp1.ViewModel
                 this.RaisePropertyChanged("WARNVER");
             }
         }
+        private string homePageVisibility;
+
+        public string HomePageVisibility
+        {
+            get { return homePageVisibility; }
+            set
+            {
+                homePageVisibility = value;
+                this.RaisePropertyChanged("HomePageVisibility");
+            }
+        }
+        private string alarmReportFormPageVisibility;
+
+        public string AlarmReportFormPageVisibility
+        {
+            get { return alarmReportFormPageVisibility; }
+            set
+            {
+                alarmReportFormPageVisibility = value;
+                this.RaisePropertyChanged("AlarmReportFormPageVisibility");
+            }
+        }
+        private ObservableCollection<AlarmReportFormViewModel> alarmReportForm;
+
+        public ObservableCollection<AlarmReportFormViewModel> AlarmReportForm
+        {
+            get { return alarmReportForm; }
+            set
+            {
+                alarmReportForm = value;
+                this.RaisePropertyChanged("AlarmReportForm");
+            }
+        }
 
         #endregion
         #region 方法绑定
         public DelegateCommand<object> MenuActionCommand { get; set; }
         public DelegateCommand BigDataPeramEditCommand { get; set; }
+        public DelegateCommand AlarmReportFromExportCommand { get; set; }
         #endregion
         #region 变量
         private string iniParameterPath = System.Environment.CurrentDirectory + "\\Parameter.ini";
@@ -148,6 +184,7 @@ namespace WpfApp1.ViewModel
         public bool IOReceiveStatus = false;
         CReader reader = new CReader();
         bool[] M300;
+        string LastBanci;
         List<SXJ.AlarmData> AlarmList = new List<SXJ.AlarmData>();
         #endregion
         #region 构造函数
@@ -155,6 +192,7 @@ namespace WpfApp1.ViewModel
         {
             MenuActionCommand = new DelegateCommand<object>(new Action<object>(this.MenuActionCommandExecute));
             BigDataPeramEditCommand = new DelegateCommand(new Action(this.BigDataPeramEditCommandExecute));
+            AlarmReportFromExportCommand = new DelegateCommand(new Action(this.AlarmReportFromExportCommandExecute));
             fx5U.ConnectStateChanged += Fx5uConnectStateChanged;
             Init();
             Task.Run(() => { PLCRun(); });
@@ -166,7 +204,19 @@ namespace WpfApp1.ViewModel
         #region 方法绑定函数
         private void MenuActionCommandExecute(object p)
         {
-
+            switch (p.ToString())
+            {
+                case "0":
+                    HomePageVisibility = "Visible";
+                    AlarmReportFormPageVisibility = "Collapsed";
+                    break;
+                case "1":
+                    HomePageVisibility = "Collapsed";
+                    AlarmReportFormPageVisibility = "Visible";
+                    break;
+                default:
+                    break;
+            }
         }
         private void BigDataPeramEditCommandExecute()
         {
@@ -187,6 +237,23 @@ namespace WpfApp1.ViewModel
                 AddMessage("大数据参数保存");
             }
         }
+        private void AlarmReportFromExportCommandExecute()
+        {
+            Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
+            //dlg.FileName = "AlarmReport"; // Default file name
+            //dlg.DefaultExt = ".xlsx"; // Default file extension
+            dlg.Filter = "Text Files(*.xlsx)|*.xlsx|All(*.*)|*"; // Filter files by extension
+
+            // Show save file dialog box
+            Nullable<bool> result = dlg.ShowDialog();
+
+            // Process save file dialog box results
+            if (result == true)
+            {
+                // Save document
+                WriteAlarmtoExcel(dlg.FileName);
+            }
+        }
         #endregion
         #region 自定义函数
         private void Init()
@@ -204,6 +271,24 @@ namespace WpfApp1.ViewModel
             MachineNumber = Inifile.INIGetStringValue(iniParameterPath, "System", "MachineNumber", "NA");
             ProgramName = Inifile.INIGetStringValue(iniParameterPath, "System", "ProgramName", "NA");
             WARNVER = Inifile.INIGetStringValue(iniParameterPath, "System", "WARNVER", "NA");
+            LastBanci = Inifile.INIGetStringValue(iniParameterPath, "Summary", "LastBanci", "null");
+            HomePageVisibility = "Visible";
+            AlarmReportFormPageVisibility = "Collapsed";
+            
+            try
+            {
+                using (StreamReader reader = new StreamReader(System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json")))
+                {
+                    string json = reader.ReadToEnd();
+                    AlarmReportForm = JsonConvert.DeserializeObject<ObservableCollection<AlarmReportFormViewModel>>(json);
+                }
+            }
+            catch(Exception ex)
+            {
+                AlarmReportForm = new ObservableCollection<AlarmReportFormViewModel>();
+                WriteToJson(AlarmReportForm, System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json"));
+                AddMessage(ex.Message);
+            }
             #region 报警文档
             try
             {
@@ -242,6 +327,24 @@ namespace WpfApp1.ViewModel
             }
             #endregion
         }
+        private void WriteToJson(object p, string path)
+        {
+            try
+            {
+                using (FileStream fs = File.Open(path, FileMode.Create))
+                using (StreamWriter sw = new StreamWriter(fs))
+                using (JsonWriter jw = new JsonTextWriter(sw))
+                {
+                    jw.Formatting = Formatting.Indented;
+                    JsonSerializer serializer = new JsonSerializer();
+                    serializer.Serialize(jw, p);
+                }
+            }
+            catch (Exception ex)
+            {
+                AddMessage(ex.Message);
+            }
+        }
         public async void checkIOReceiveNet()
         {
             while (true)
@@ -272,52 +375,56 @@ namespace WpfApp1.ViewModel
             while (true)
             {
                 //await Task.Delay(100);
-                if (IOReceiveStatus == true)
+                try
                 {
-                    string s = await IOReceiveNet.ReceiveAsync();
-
-                    string[] ss = s.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-                    try
+                    if (IOReceiveStatus == true)
                     {
-                        s = ss[0];
+                        string s = await IOReceiveNet.ReceiveAsync();
 
-                    }
-                    catch
-                    {
-                        s = "error";
-                    }
+                        string[] ss = s.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                        try
+                        {
+                            s = ss[0];
 
-                    if (s == "error")
-                    {
-                        IOReceiveNet.tcpConnected = false;
-                        IOReceiveStatus = false;
-                        //ModelPrint("机械手IOReceiveNet断开");
+                        }
+                        catch
+                        {
+                            s = "error";
+                        }
+
+                        if (s == "error")
+                        {
+                            IOReceiveNet.tcpConnected = false;
+                            IOReceiveStatus = false;
+                            //ModelPrint("机械手IOReceiveNet断开");
+                        }
+                        else
+                        {
+                            string[] strs = s.Split(',');
+                            if (strs[0] == "IOCMD" && strs[1].Length == 100)
+                            {
+                                for (int i = 0; i < 100; i++)
+                                {
+                                    Rc90In[i] = strs[1][i] == '1' ? true : false;
+                                }
+                                string RsedStr = "";
+                                for (int i = 0; i < 100; i++)
+                                {
+                                    RsedStr += Rc90Out[i] ? "1" : "0";
+                                }
+                                await IOReceiveNet.SendAsync(RsedStr);
+                                //ModelPrint("IOSend " + RsedStr);
+                                //await Task.Delay(1);
+                            }
+                            //ModelPrint("IORev: " + s);
+                        }
                     }
                     else
                     {
-                        string[] strs = s.Split(',');
-                        if (strs[0] == "IOCMD" && strs[1].Length == 100)
-                        {
-                            for (int i = 0; i < 100; i++)
-                            {
-                                Rc90In[i] = strs[1][i] == '1' ? true : false;
-                            }
-                            string RsedStr = "";
-                            for (int i = 0; i < 100; i++)
-                            {
-                                RsedStr += Rc90Out[i] ? "1" : "0";
-                            }
-                            await IOReceiveNet.SendAsync(RsedStr);
-                            //ModelPrint("IOSend " + RsedStr);
-                            //await Task.Delay(1);
-                        }
-                        //ModelPrint("IORev: " + s);
+                        await Task.Delay(100);
                     }
                 }
-                else
-                {
-                    await Task.Delay(100);
-                }
+                catch { }           
             }
         }
         async void Run()
@@ -405,54 +512,99 @@ namespace WpfApp1.ViewModel
 
                     #endregion
                     #region 报警记录
-                    try
-                    {
-                        //读报警
-                        M300 = fx5U.ReadMultiM("M3200", 800);
-                        if (M300 != null && StatusPLC)
+                    await Task.Run(()=> {
+                        try
                         {
-                            for (int i = 0; i < AlarmList.Count; i++)
+                            //读报警
+                            M300 = fx5U.ReadMultiM("M3200", 800);
+                            if (M300 != null && StatusPLC)
                             {
-                                if (M300[i] != AlarmList[i].State && AlarmList[i].Content != "Null")
+                                for (int i = 0; i < AlarmList.Count; i++)
                                 {
-                                    AlarmList[i].State = M300[i];
-                                     if (AlarmList[i].State)
+                                    if (M300[i] != AlarmList[i].State && AlarmList[i].Content != "Null")
                                     {
-                                        AlarmList[i].Start = DateTime.Now;
-                                        AlarmList[i].End = DateTime.Now;
-                                        AddMessage(AlarmList[i].Code + AlarmList[i].Content + "发生");
-                                        if (CurrentAlarm != AlarmList[i].Content)
+                                        AlarmList[i].State = M300[i];
+                                        if (AlarmList[i].State)
                                         {
-                                            string banci = GetBanci();
-                                            if (!File.Exists(Path.Combine("D:\\报警记录", "VPP贴膜下料机报警记录" + banci + ".csv")))
+                                            AlarmList[i].Start = DateTime.Now;
+                                            AlarmList[i].End = DateTime.Now;
+                                            AddMessage(AlarmList[i].Code + AlarmList[i].Content + "发生");
+                                            var nowAlarm = AlarmReportForm.FirstOrDefault(s => s.Code == AlarmList[i].Code);
+                                            if (nowAlarm == null)
                                             {
-                                                string[] heads = new string[] { "时间", "内容" };
-                                                Csvfile.savetocsv(Path.Combine("D:\\报警记录", "VPP贴膜下料机报警记录" + banci + ".csv"), heads);
+                                                AlarmReportFormViewModel newAlarm = new AlarmReportFormViewModel()
+                                                {
+                                                    Code = AlarmList[i].Code,
+                                                    Content = AlarmList[i].Content,
+                                                    Count = 0,
+                                                    TimeSpan = AlarmList[i].End - AlarmList[i].Start
+                                                };
+                                                AlarmReportForm.Add(newAlarm);
+                                                WriteToJson(AlarmReportForm, System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json"));
                                             }
-                                            string[] conts = new string[] { AlarmList[i].Start.ToString(), AlarmList[i].Content };
-                                            Csvfile.savetocsv(Path.Combine("D:\\报警记录", "VPP贴膜下料机报警记录" + banci + ".csv"), conts);
-                                            CurrentAlarm = AlarmList[i].Content;
-                                            #region 上传
-                                            string Banci = (DateTime.Now.Hour >= 8 && DateTime.Now.Hour < 20) ? "D" : "N";
-                                            SXJ.Mysql mysql = new SXJ.Mysql();
-                                            if (mysql.Connect())
+                                            if (CurrentAlarm != AlarmList[i].Content)
                                             {
-                                                string stm = "insert into TED_WARN_DATA (WORKSTATION,PARTNUM,MACID,LOADID,PETID,TDATE,TTIME,CLASS,WARNID,DETAILID,WARNNUM,FL01,FL02,FL03,FL04,FL05,FL06,FL07,FL08,FL09,FL10,SUPPLIER,WARNVER) value('" + TestStation + "','" + ProgramName + "','" + MachineNumber + "','" + MachineNumber + "','','" + DateTime.Now.ToString("yyyyMMdd") + "','" + DateTime.Now.ToString("HHmmss") + "','" + Banci + "','" + AlarmList[i].Content + "','','1','','','','','','','','','','','" + Supplier + "','" + WARNVER + "')";
-                                                mysql.executeQuery(stm);
+                                                string banci = GetBanci();
+                                                if (!File.Exists(Path.Combine("D:\\报警记录", "VPP报警记录" + banci + ".csv")))
+                                                {
+                                                    string[] heads = new string[] { "时间", "内容" };
+                                                    Csvfile.savetocsv(Path.Combine("D:\\报警记录", "VPP报警记录" + banci + ".csv"), heads);
+                                                }
+                                                string[] conts = new string[] { AlarmList[i].Start.ToString(), AlarmList[i].Content };
+                                                Csvfile.savetocsv(Path.Combine("D:\\报警记录", "VPP报警记录" + banci + ".csv"), conts);
+                                                CurrentAlarm = AlarmList[i].Content;
+                                                #region 上传
+                                                string Banci = (DateTime.Now.Hour >= 8 && DateTime.Now.Hour < 20) ? "D" : "N";
+                                                SXJ.Mysql mysql = new SXJ.Mysql();
+                                                if (mysql.Connect())
+                                                {
+                                                    string stm = "insert into TED_WARN_DATA (WORKSTATION,PARTNUM,MACID,LOADID,PETID,TDATE,TTIME,CLASS,WARNID,DETAILID,WARNNUM,FL01,FL02,FL03,FL04,FL05,FL06,FL07,FL08,FL09,FL10,SUPPLIER,WARNVER) value('" + TestStation + "','" + ProgramName + "','" + MachineNumber + "','" + MachineNumber + "','','" + DateTime.Now.ToString("yyyyMMdd") + "','" + DateTime.Now.ToString("HHmmss") + "','" + Banci + "','" + AlarmList[i].Content + "','','1','','','','','','','','','','','" + Supplier + "','" + WARNVER + "')";
+                                                    mysql.executeQuery(stm);
+                                                }
+                                                mysql.DisConnect();
+                                                #endregion
                                             }
-                                            mysql.DisConnect();
-                                            #endregion
+                                        }
+                                        else
+                                        {
+                                            AlarmList[i].End = DateTime.Now;
+                                            AddMessage(AlarmList[i].Code + AlarmList[i].Content + "解除");
+                                            var nowAlarm = AlarmReportForm.FirstOrDefault(s => s.Code == AlarmList[i].Code);
+                                            if (nowAlarm != null)
+                                            {
+                                                nowAlarm.Count++;
+                                                nowAlarm.TimeSpan += AlarmList[i].End - AlarmList[i].Start;
+                                                WriteToJson(AlarmReportForm, System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json"));
+                                            }
                                         }
                                     }
-
                                 }
-                            }
 
+                            }
                         }
-                    }
-                    catch (Exception ex)
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.Message);
+                        }
+                    });
+
+                    #endregion
+                    #region 换班
+                    if (LastBanci != GetBanci())
                     {
-                        Console.WriteLine(ex.Message);
+                        try
+                        {
+                            WriteAlarmtoExcel(Path.Combine("D:\\报警记录", "VPP报警统计" + LastBanci + ".xlsx"));
+                            AlarmReportForm.Clear();
+                            WriteToJson(AlarmReportForm, System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json"));
+                            LastBanci = GetBanci();
+                            Inifile.INIWriteValue(iniParameterPath, "Summary", "LastBanci", LastBanci);
+                            AddMessage(LastBanci + " 换班数据清零");
+                        }
+                        catch (Exception ex)
+                        {
+                            AddMessage(ex.Message);
+                        }
                     }
                     #endregion
                 }
@@ -505,12 +657,14 @@ namespace WpfApp1.ViewModel
                  * 
                  */
                 System.Threading.Thread.Sleep(100);
-                //Mytext = Guid.NewGuid().ToString();
-                //读PLC
-                PLCIN = fx5U.ReadMultiM("M2300", 100);
-                //写PLC
-                fx5U.SetMultiM("M2200", PLCOUT);
-
+                try
+                {
+                    //读PLC
+                    PLCIN = fx5U.ReadMultiM("M2300", 100);
+                    //写PLC
+                    fx5U.SetMultiM("M2200", PLCOUT);
+                }
+                catch { }
             }
         }
         private void AddMessage(string str)
@@ -572,6 +726,35 @@ namespace WpfApp1.ViewModel
                 }
             }
             return rs;
+        }
+        private void WriteAlarmtoExcel(string filepath)
+        {
+            try
+            {
+                using (ExcelPackage package = new ExcelPackage())
+                {
+                    var ws = package.Workbook.Worksheets.Add("MySheet");
+                    ws.Cells[1, 1].Value = "ID";
+                    ws.Cells[1, 2].Value = "报警内容";
+                    ws.Cells[1, 3].Value = "报警次数";
+                    ws.Cells[1, 4].Value = "报警时长(分钟)";
+                    ws.Cells[1, 5].Value = DateTime.Now.ToString();
+                    for (int i = 0; i < AlarmReportForm.Count; i++)
+                    {
+                        ws.Cells[i + 2, 1].Value = AlarmReportForm[i].Code;
+                        ws.Cells[i + 2, 2].Value = AlarmReportForm[i].Content;
+                        ws.Cells[i + 2, 3].Value = AlarmReportForm[i].Count;
+                        ws.Cells[i + 2, 4].Value = Math.Round(AlarmReportForm[i].TimeSpan.TotalMinutes,1);
+                    }
+                    package.SaveAs(new FileInfo(filepath));
+                }
+
+            }
+            catch (Exception ex)
+            {
+                AddMessage(ex.Message);
+            }
+
         }
         #endregion
     }
