@@ -23,6 +23,7 @@ namespace WpfApp1.View
         public AlarmReportFormPage()
         {
             InitializeComponent();
+            
         }
     }
 }
