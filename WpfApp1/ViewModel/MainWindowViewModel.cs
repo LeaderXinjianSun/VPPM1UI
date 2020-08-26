@@ -200,12 +200,42 @@ namespace WpfApp1.ViewModel
                 this.RaisePropertyChanged("PassRadio");
             }
         }
+        private string version;
+        public string Version
+        {
+            get { return version; }
+            set
+            {
+                version = value;
+                this.RaisePropertyChanged("Version");
+            }        
+        }
+        private MachineStateViewModel machineStateA;
+        public MachineStateViewModel MachineStateA
+        {
+            get { return machineStateA; }
+            set
+            {
+                machineStateA = value;
+                this.RaisePropertyChanged("MachineStateA");
+            }
+        }
+        private MachineStateViewModel machineStateB;
+        public MachineStateViewModel MachineStateB
+        {
+            get { return machineStateB; }
+            set
+            {
+                machineStateB = value;
+                this.RaisePropertyChanged("MachineStateB");
+            }
+        }
         #endregion
         #region 方法绑定
         public DelegateCommand<object> MenuActionCommand { get; set; }
         public DelegateCommand BigDataPeramEditCommand { get; set; }
         public DelegateCommand AlarmReportFromExportCommand { get; set; }
-        public DelegateCommand FuncCommand { get; set; }
+        public DelegateCommand FuncCommand { get; set; }        
         #endregion
         #region 变量
         private string iniParameterPath = System.Environment.CurrentDirectory + "\\Parameter.ini";
@@ -219,6 +249,7 @@ namespace WpfApp1.ViewModel
         bool[] M300;
         string LastBanci;
         List<SXJ.AlarmData> AlarmList = new List<SXJ.AlarmData>();
+        DispatcherTimer dispatcherTimer = new DispatcherTimer();
         #endregion
         #region 构造函数
         public MainWindowViewModel()
@@ -228,11 +259,23 @@ namespace WpfApp1.ViewModel
             AlarmReportFromExportCommand = new DelegateCommand(new Action(this.AlarmReportFromExportCommandExecute));
             FuncCommand = new DelegateCommand(new Action(this.FuncCommandExecute));
             fx5U.ConnectStateChanged += Fx5uConnectStateChanged;
+            dispatcherTimer.Interval = new TimeSpan(0, 0, 1);
+            dispatcherTimer.Tick += DispatcherTimer_Tick;
+            dispatcherTimer.Start();
             Init();
             Task.Run(() => { PLCRun(); });
             checkIOReceiveNet();
             IORevAnalysis();
             Run();
+        }
+        /// <summary>
+        /// 计时器，每秒执行一次
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void DispatcherTimer_Tick(object sender, EventArgs e)
+        {
+            
         }
         #endregion
         #region 方法绑定函数
@@ -292,11 +335,13 @@ namespace WpfApp1.ViewModel
         {
             //var aa = fx5U.ReadDW("D6500");
             //var aa = 147 << 8;
+            //WriteStatetoExcel(Path.Combine("D:\\报警记录", "VPP时间统计" + LastBanci + ".xlsx"));
         }
         #endregion
         #region 自定义函数
         private void Init()
         {
+            Version = "1.0826";
             MessageStr = "";
             BigDataEditIsReadOnly = true;
             BigDataPeramEdit = "Edit";
@@ -326,6 +371,53 @@ namespace WpfApp1.ViewModel
             {
                 AlarmReportForm = new ObservableCollection<AlarmReportFormViewModel>();
                 WriteToJson(AlarmReportForm, System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json"));
+                AddMessage(ex.Message);
+            }
+
+            try
+            {
+                using (StreamReader reader = new StreamReader(System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateA.json")))
+                {
+                    string json = reader.ReadToEnd();
+                    MachineStateA = JsonConvert.DeserializeObject<MachineStateViewModel>(json);
+                }
+            }
+            catch (Exception ex)
+            {
+                MachineStateA = new MachineStateViewModel()
+                {
+                    DaiLiao = 0,
+                    HuanMo = 0,
+                    YangBen = 0,
+                    TesterAlarm = 0,
+                    Down = 0,
+                    UploaderAlarm = 0,
+                    Run = 0
+                };
+                WriteToJson(MachineStateA, System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateA.json"));
+                AddMessage(ex.Message);
+            }
+            try
+            {
+                using (StreamReader reader = new StreamReader(System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateB.json")))
+                {
+                    string json = reader.ReadToEnd();
+                    MachineStateB = JsonConvert.DeserializeObject<MachineStateViewModel>(json);
+                }
+            }
+            catch (Exception ex)
+            {
+                MachineStateB = new MachineStateViewModel()
+                {
+                    DaiLiao = 0,
+                    HuanMo = 0,
+                    YangBen = 0,
+                    TesterAlarm = 0,
+                    Down = 0,
+                    UploaderAlarm = 0,
+                    Run = 0
+                };
+                WriteToJson(MachineStateB, System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateB.json"));
                 AddMessage(ex.Message);
             }
             #region 报警文档
@@ -731,12 +823,15 @@ namespace WpfApp1.ViewModel
                     try
                     {
                         WriteAlarmtoExcel(Path.Combine("D:\\报警记录", "VPP报警统计" + LastBanci + ".xlsx"));
-                        //Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() => {
                         AlarmReportForm.Clear();
-                        // }));
-
-
                         WriteToJson(AlarmReportForm, System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json"));
+
+                        WriteStatetoExcel(Path.Combine("D:\\报警记录", "VPP时间统计" + LastBanci + ".xlsx"));
+                        MachineStateA.Clean();
+                        WriteToJson(MachineStateA, System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateA.json"));
+                        MachineStateB.Clean();
+                        WriteToJson(MachineStateB, System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateB.json"));
+
                         LastBanci = GetBanci();
                         Inifile.INIWriteValue(iniParameterPath, "Summary", "LastBanci", LastBanci);
                         AddMessage(LastBanci + " 换班数据清零");
@@ -919,6 +1014,61 @@ namespace WpfApp1.ViewModel
                         ws.Cells[i + 2, 3].Value = AlarmReportForm[i].Count;
                         ws.Cells[i + 2, 4].Value = Math.Round(AlarmReportForm[i].TimeSpan.TotalMinutes, 1);
                     }
+                    package.SaveAs(new FileInfo(filepath));
+                }
+
+            }
+            catch (Exception ex)
+            {
+                AddMessage(ex.Message);
+            }
+
+        }
+        private void WriteStatetoExcel(string filepath)
+        {
+            try
+            {
+                using (ExcelPackage package = new ExcelPackage())
+                {
+                    var ws = package.Workbook.Worksheets.Add("MySheet");
+                    ws.Cells[1, 1].Value = "A";
+                    ws.Cells[1, 3].Value = DateTime.Now.ToString();
+                    ws.Cells[2, 1].Value = "项目";
+                    ws.Cells[2, 2].Value = "时间(单位min)";
+                    ws.Cells[3, 1].Value = "待料";
+                    ws.Cells[3, 2].Value = Math.Round(MachineStateA.DaiLiao, 1);
+                    ws.Cells[4, 1].Value = "换膜";
+                    ws.Cells[4, 2].Value = Math.Round(MachineStateA.HuanMo, 1);
+                    ws.Cells[5, 1].Value = "样本";
+                    ws.Cells[5, 2].Value = Math.Round(MachineStateA.YangBen, 1);
+                    ws.Cells[6, 1].Value = "测试机报警";
+                    ws.Cells[6, 2].Value = Math.Round(MachineStateA.TesterAlarm, 1);
+                    ws.Cells[7, 1].Value = "故障";
+                    ws.Cells[7, 2].Value = Math.Round(MachineStateA.Down, 1);
+                    ws.Cells[8, 1].Value = "上料机报警";
+                    ws.Cells[8, 2].Value = Math.Round(MachineStateA.UploaderAlarm, 1);
+                    ws.Cells[9, 1].Value = "机台运行";
+                    ws.Cells[9, 2].Value = Math.Round(MachineStateA.Run, 1);
+
+                    ws.Cells[11, 1].Value = "B";
+                    ws.Cells[11, 3].Value = DateTime.Now.ToString();
+                    ws.Cells[12, 1].Value = "项目";
+                    ws.Cells[12, 2].Value = "时间(单位min)";
+                    ws.Cells[13, 1].Value = "待料";
+                    ws.Cells[13, 2].Value = Math.Round(MachineStateB.DaiLiao, 1);
+                    ws.Cells[14, 1].Value = "换膜";
+                    ws.Cells[14, 2].Value = Math.Round(MachineStateB.HuanMo, 1);
+                    ws.Cells[15, 1].Value = "样本";
+                    ws.Cells[15, 2].Value = Math.Round(MachineStateB.YangBen, 1);
+                    ws.Cells[16, 1].Value = "测试机报警";
+                    ws.Cells[16, 2].Value = Math.Round(MachineStateB.TesterAlarm, 1);
+                    ws.Cells[17, 1].Value = "故障";
+                    ws.Cells[17, 2].Value = Math.Round(MachineStateB.Down, 1);
+                    ws.Cells[18, 1].Value = "上料机报警";
+                    ws.Cells[18, 2].Value = Math.Round(MachineStateB.UploaderAlarm, 1);
+                    ws.Cells[19, 1].Value = "机台运行";
+                    ws.Cells[19, 2].Value = Math.Round(MachineStateB.Run, 1);
+
                     package.SaveAs(new FileInfo(filepath));
                 }
 

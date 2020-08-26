@@ -21,50 +21,135 @@
             </Grid.Background>
         </Grid>
         <TextBox Grid.Row="1" VerticalAlignment="Stretch" VerticalContentAlignment="Top" HorizontalContentAlignment="Left" Margin="1" x:Name="MsgTextBox" IsReadOnly="True" TextChanged="MsgTextBox_TextChanged"  FontSize="14" Background="Black" FontFamily="宋体" Foreground="White" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Text="{Binding MessageStr}"></TextBox>
-        <Grid Grid.Column="1">
-            <GroupBox Header="大数据">
-                <StackPanel Orientation="Vertical">
-                    <StackPanel Orientation="Horizontal" Margin="1">
-                        <TextBlock VerticalAlignment="Center" Text="测试工站" Width="80"></TextBlock>
-                        <TextBox IsReadOnly="{Binding BigDataEditIsReadOnly}" Width="100" Text="{Binding TestStation}"></TextBox>
+        <Grid Grid.Column="1" Grid.RowSpan="2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition></RowDefinition>
+                    <RowDefinition></RowDefinition>
+                </Grid.RowDefinitions>
+                <GroupBox Header="大数据">
+                    <StackPanel Orientation="Vertical">
+                        <StackPanel Orientation="Horizontal" Margin="1">
+                            <TextBlock VerticalAlignment="Center" Text="测试工站" Width="80"></TextBlock>
+                            <TextBox IsReadOnly="{Binding BigDataEditIsReadOnly}" Width="100" Text="{Binding TestStation}"></TextBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="1">
+                            <TextBlock VerticalAlignment="Center" Text="机台编号" Width="80"></TextBlock>
+                            <TextBox IsReadOnly="{Binding BigDataEditIsReadOnly}" Width="100" Text="{Binding MachineNumber}"></TextBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="1">
+                            <TextBlock VerticalAlignment="Center" Text="厂商代码" Width="80"></TextBlock>
+                            <TextBox IsReadOnly="{Binding BigDataEditIsReadOnly}" Width="100" Text="{Binding Supplier}"></TextBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="1">
+                            <TextBlock VerticalAlignment="Center" Text="料号" Width="80"></TextBlock>
+                            <TextBox IsReadOnly="{Binding BigDataEditIsReadOnly}" Width="100" Text="{Binding ProgramName}"></TextBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="1">
+                            <TextBlock VerticalAlignment="Center" Text="报警代码版本" Width="80"></TextBlock>
+                            <TextBox IsReadOnly="{Binding BigDataEditIsReadOnly}" Width="100" Text="{Binding WARNVER}"></TextBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,50,5,0">
+                            <Button Content="{Binding BigDataPeramEdit}" Width="60" Height="30" Command="{Binding BigDataPeramEditCommand}"></Button>
+                        </StackPanel>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="1">
-                        <TextBlock VerticalAlignment="Center" Text="机台编号" Width="80"></TextBlock>
-                        <TextBox IsReadOnly="{Binding BigDataEditIsReadOnly}" Width="100" Text="{Binding MachineNumber}"></TextBox>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="1">
-                        <TextBlock VerticalAlignment="Center" Text="厂商代码" Width="80"></TextBlock>
-                        <TextBox IsReadOnly="{Binding BigDataEditIsReadOnly}" Width="100" Text="{Binding Supplier}"></TextBox>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="1">
-                        <TextBlock VerticalAlignment="Center" Text="料号" Width="80"></TextBlock>
-                        <TextBox IsReadOnly="{Binding BigDataEditIsReadOnly}" Width="100" Text="{Binding ProgramName}"></TextBox>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="1">
-                        <TextBlock VerticalAlignment="Center" Text="报警代码版本" Width="80"></TextBlock>
-                        <TextBox IsReadOnly="{Binding BigDataEditIsReadOnly}" Width="100" Text="{Binding WARNVER}"></TextBox>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,100,5,0">
-                        <Button Content="{Binding BigDataPeramEdit}" Width="60" Height="30" Command="{Binding BigDataPeramEditCommand}"></Button>
-                    </StackPanel>
-                </StackPanel>
-            </GroupBox>
-        </Grid>
-        <Grid Grid.Row="1" Grid.Column="1">
-            <GroupBox Header="机台参数">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="妥善率 = 1 - "></TextBlock>
-                    <TextBlock Text="{Binding AlarmCout}"></TextBlock>
-                    <TextBlock Text=" / "></TextBlock>
-                    <TextBlock Text="{Binding PcsCout}"></TextBlock>
-                    <TextBlock Text=" = "></TextBlock>
-                    <TextBlock Text="{Binding PassRadio}"></TextBlock>
-                    <TextBlock Text="%"></TextBlock>
-                    <!--<Button Height="30" Width="60" Command="{Binding FuncCommand}"></Button>-->
-                </StackPanel>
-                
-                
-            </GroupBox>
+                </GroupBox>
+                <GroupBox Header="机台参数" Grid.Row="1">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition></RowDefinition>
+                            <RowDefinition Height="16"></RowDefinition>
+                        </Grid.RowDefinitions>
+                        <TabControl>
+                            <TabItem Header="A">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition></RowDefinition>
+                                        <RowDefinition></RowDefinition>
+                                        <RowDefinition></RowDefinition>
+                                        <RowDefinition></RowDefinition>
+                                        <RowDefinition></RowDefinition>
+                                        <RowDefinition></RowDefinition>
+                                        <RowDefinition></RowDefinition>
+                                        <RowDefinition></RowDefinition>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition></ColumnDefinition>
+                                        <ColumnDefinition></ColumnDefinition>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="项目" VerticalAlignment="Center" FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="待料" Foreground="HotPink" VerticalAlignment="Center" ToolTip="上料盘、下料盘传感器感应无料" Grid.Row="1" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="换膜" Foreground="HotPink" VerticalAlignment="Center" ToolTip="剥膜失败报警" Grid.Row="2" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="样本" Foreground="HotPink" VerticalAlignment="Center" ToolTip="样本测试" Grid.Row="3" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="测试机报警" Foreground="DarkGoldenrod" VerticalAlignment="Center" ToolTip="测试机报警" Grid.Row="4" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="故障" Foreground="DarkBlue" VerticalAlignment="Center" ToolTip="急停、开门" Grid.Row="5" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="上料机报警" Foreground="DarkBlue" VerticalAlignment="Center" ToolTip="上料机报警" Grid.Row="6" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="运行" Foreground="Green" VerticalAlignment="Center" Grid.Row="7" HorizontalAlignment="Center"></TextBlock>
+
+                                    <TextBlock Text="时间(单位min)" VerticalAlignment="Center" FontWeight="Bold" Grid.Column="1" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="{Binding MachineStateA.DaiLiao,StringFormat={}{0:F1}}" VerticalAlignment="Center" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="{Binding MachineStateA.HuanMo,StringFormat={}{0:F1}}" VerticalAlignment="Center" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="{Binding MachineStateA.YangBen,StringFormat={}{0:F1}}" VerticalAlignment="Center" Grid.Row="3" Grid.Column="1" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="{Binding MachineStateA.TesterAlarm,StringFormat={}{0:F1}}" VerticalAlignment="Center" Grid.Row="4" Grid.Column="1" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="{Binding MachineStateA.Down,StringFormat={}{0:F1}}" VerticalAlignment="Center" Grid.Row="5" Grid.Column="1" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="{Binding MachineStateA.UploaderAlarm,StringFormat={}{0:F1}}" VerticalAlignment="Center" Grid.Row="6" Grid.Column="1" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="{Binding MachineStateA.Run,StringFormat={}{0:F1}}" VerticalAlignment="Center" Grid.Row="7" Grid.Column="1" HorizontalAlignment="Center"></TextBlock>
+                                </Grid>
+                            </TabItem>
+                            <TabItem Header="B">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition></RowDefinition>
+                                        <RowDefinition></RowDefinition>
+                                        <RowDefinition></RowDefinition>
+                                        <RowDefinition></RowDefinition>
+                                        <RowDefinition></RowDefinition>
+                                        <RowDefinition></RowDefinition>
+                                        <RowDefinition></RowDefinition>
+                                        <RowDefinition></RowDefinition>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition></ColumnDefinition>
+                                        <ColumnDefinition></ColumnDefinition>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="项目" VerticalAlignment="Center" FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="待料" Foreground="HotPink" VerticalAlignment="Center" ToolTip="上料盘、下料盘传感器感应无料" Grid.Row="1" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="换膜" Foreground="HotPink" VerticalAlignment="Center" ToolTip="剥膜失败报警" Grid.Row="2" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="样本" Foreground="HotPink" VerticalAlignment="Center" ToolTip="样本测试" Grid.Row="3" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="测试机报警" Foreground="DarkGoldenrod" VerticalAlignment="Center" ToolTip="测试机报警" Grid.Row="4" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="故障" Foreground="DarkBlue" VerticalAlignment="Center" ToolTip="急停、开门" Grid.Row="5" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="上料机报警" Foreground="DarkBlue" VerticalAlignment="Center" ToolTip="上料机报警" Grid.Row="6" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="运行" Foreground="Green" VerticalAlignment="Center" Grid.Row="7" HorizontalAlignment="Center"></TextBlock>
+
+                                    <TextBlock Text="时间(单位min)" VerticalAlignment="Center" FontWeight="Bold" Grid.Column="1" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="{Binding MachineStateB.DaiLiao,StringFormat={}{0:F1}}" VerticalAlignment="Center" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="{Binding MachineStateB.HuanMo,StringFormat={}{0:F1}}" VerticalAlignment="Center" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="{Binding MachineStateB.YangBen,StringFormat={}{0:F1}}" VerticalAlignment="Center" Grid.Row="3" Grid.Column="1" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="{Binding MachineStateB.TesterAlarm,StringFormat={}{0:F1}}" VerticalAlignment="Center" Grid.Row="4" Grid.Column="1" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="{Binding MachineStateB.Down,StringFormat={}{0:F1}}" VerticalAlignment="Center" Grid.Row="5" Grid.Column="1" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="{Binding MachineStateB.UploaderAlarm,StringFormat={}{0:F1}}" VerticalAlignment="Center" Grid.Row="6" Grid.Column="1" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="{Binding MachineStateB.Run,StringFormat={}{0:F1}}" VerticalAlignment="Center" Grid.Row="7" Grid.Column="1" HorizontalAlignment="Center"></TextBlock>
+                                </Grid>
+                            </TabItem>
+                        </TabControl>
+
+                        <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal">
+                            <TextBlock Text="妥善率 = 1 - "></TextBlock>
+                            <TextBlock Text="{Binding AlarmCout}"></TextBlock>
+                            <TextBlock Text=" / "></TextBlock>
+                            <TextBlock Text="{Binding PcsCout}"></TextBlock>
+                            <TextBlock Text=" = "></TextBlock>
+                            <TextBlock Text="{Binding PassRadio}"></TextBlock>
+                            <TextBlock Text="%"></TextBlock>
+                            <!--<Button Content="功能" Command="{Binding FuncCommand}"></Button>-->
+                        </StackPanel>
+                    </Grid>
+
+
+
+                </GroupBox>
+            </Grid>
+
         </Grid>
     </Grid>
 </UserControl>

@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:WpfApp1"
         xmlns:Views="clr-namespace:WpfApp1.View"
         mc:Ignorable="d"
-        Title="VPP上料机PLC-机械手互刷工具_Ver 1.0819" Icon="swimming_64px_1277751_easyicon.net.ico"
+        Title="{Binding Version,StringFormat=VPP上料机PLC-机械手互刷工具_Ver {0}}" Icon="swimming_64px_1277751_easyicon.net.ico"
         Height="600" Width="800" WindowStartupLocation ="CenterScreen" ResizeMode="CanResize">
     <Window.Resources>
         <ResourceDictionary>
@@ -26,7 +26,7 @@
             <MenuItem Header="报警统计" Command="{Binding MenuActionCommand}" CommandParameter="1"></MenuItem>
         </Menu>
         <Views:HomePage Grid.Row="1" Visibility="{Binding HomePageVisibility}"></Views:HomePage>
-        <Views:AlarmReportFormPage Grid.Row="1" Visibility="{Binding AlarmReportFormPageVisibility}"></Views:AlarmReportFormPage>
+        <Views:AlarmReportFormPage Grid.Row="1" Visibility="{Binding AlarmReportFormPageVisibility,FallbackValue=Collapsed}"></Views:AlarmReportFormPage>
         <StatusBar Grid.Row="2">
             <StatusBarItem>
                 <StackPanel Orientation="Horizontal">

@@ -153,6 +153,7 @@
     <Compile Include="Model\Mysql.cs" />
     <Compile Include="Model\TCP.cs" />
     <Compile Include="ViewModel\AlarmReportFormViewModel.cs" />
+    <Compile Include="ViewModel\MachineStateViewModel.cs" />
     <Compile Include="ViewModel\MainWindowViewModel.cs" />
     <Compile Include="View\AlarmReportFormPage.xaml.cs">
       <DependentUpon>AlarmReportFormPage.xaml</DependentUpon>
