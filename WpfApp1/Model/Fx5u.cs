@@ -55,7 +55,7 @@ namespace SXJ
             //Async.RunFuncAsync(Run, null);
         }
         /// <summary>
-        /// 读双字
+        /// 读单字
         /// </summary>
         /// <param name="address"></param>
         /// <returns></returns>
@@ -72,7 +72,29 @@ namespace SXJ
             }
             if (read.Content.Length >= 2)
             {
-                return (read.Content[1] << 8) + read.Content[0];
+                string HexValue = read.Content[1].ToString("X2") + read.Content[0].ToString("X2");
+                return Convert.ToInt16(HexValue, 16);
+            }
+            else
+            {
+                return -1;
+            }
+        }
+        public int ReadDW(string address)
+        {
+            OperateResult<byte[]> read = melsec_net.Read(address, 2);
+            if (read.IsSuccess)
+            {
+                _Connect = true;
+            }
+            else
+            {
+                _Connect = false;
+            }
+            if (read.Content.Length >= 4)
+            {
+                string HexValue = read.Content[3].ToString("X2") + read.Content[2].ToString("X2") + read.Content[1].ToString("X2") + read.Content[0].ToString("X2");
+                return Convert.ToInt32(HexValue, 16);
             }
             else
             {

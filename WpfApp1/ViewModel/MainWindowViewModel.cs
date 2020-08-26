@@ -170,12 +170,42 @@ namespace WpfApp1.ViewModel
                 this.RaisePropertyChanged("AlarmReportForm");
             }
         }
-
+        private int alarmCout;
+        public int AlarmCout
+        {
+            get { return alarmCout; }
+            set
+            {
+                alarmCout = value;
+                this.RaisePropertyChanged("AlarmCout");
+            }
+        }
+        private int pcsCout;
+        public int PcsCout
+        {
+            get { return pcsCout; }
+            set
+            {
+                pcsCout = value;
+                this.RaisePropertyChanged("PcsCout");
+            }
+        }
+        private double passRadio;
+        public double PassRadio
+        {
+            get { return passRadio; }
+            set
+            {
+                passRadio = value;
+                this.RaisePropertyChanged("PassRadio");
+            }
+        }
         #endregion
         #region 方法绑定
         public DelegateCommand<object> MenuActionCommand { get; set; }
         public DelegateCommand BigDataPeramEditCommand { get; set; }
         public DelegateCommand AlarmReportFromExportCommand { get; set; }
+        public DelegateCommand FuncCommand { get; set; }
         #endregion
         #region 变量
         private string iniParameterPath = System.Environment.CurrentDirectory + "\\Parameter.ini";
@@ -196,6 +226,7 @@ namespace WpfApp1.ViewModel
             MenuActionCommand = new DelegateCommand<object>(new Action<object>(this.MenuActionCommandExecute));
             BigDataPeramEditCommand = new DelegateCommand(new Action(this.BigDataPeramEditCommandExecute));
             AlarmReportFromExportCommand = new DelegateCommand(new Action(this.AlarmReportFromExportCommandExecute));
+            FuncCommand = new DelegateCommand(new Action(this.FuncCommandExecute));
             fx5U.ConnectStateChanged += Fx5uConnectStateChanged;
             Init();
             Task.Run(() => { PLCRun(); });
@@ -256,6 +287,11 @@ namespace WpfApp1.ViewModel
                 // Save document
                 WriteAlarmtoExcel(dlg.FileName);
             }
+        }
+        private void FuncCommandExecute()
+        {
+            //var aa = fx5U.ReadDW("D6500");
+            //var aa = 147 << 8;
         }
         #endregion
         #region 自定义函数
@@ -441,8 +477,9 @@ namespace WpfApp1.ViewModel
         }
         async void Run()
         {
-            int count1 = 0, oldMinute = -1;
-            string CurrentAlarm = "";
+            int count1 = 0, oldMinute = -1, count2 = 0;
+            string CurrentAlarmM1 = "", CurrentAlarmM2_1 = "", CurrentAlarmM2_2 = "", CurrentAlarmM3_1 = "", CurrentAlarmM3_2 = "";
+            bool isRecord = false;
             string MODE = "1";
             int CardStatus = 1, cardret = 1;
             if (!Directory.Exists("D:\\报警记录"))
@@ -475,15 +512,17 @@ namespace WpfApp1.ViewModel
 
 
             //await Task.Run(() => {
-                while (true)
+            while (true)
+            {
+                await Task.Delay(100);
+                //Thread.Sleep(100);
+                #region 刷卡
+                if (count1++ > 4)
                 {
-                    await Task.Delay(100);
-                    //Thread.Sleep(100);
-                    if (count1++ > 4)
+                    count1 = 0;
+                   
+                    await Task.Run(() =>
                     {
-                        count1 = 0;
-                        #region 刷卡
-                        await Task.Run(() => {
                         try
                         {
                             byte[] buf = new byte[256];//用来存储卡信息的buff
@@ -536,27 +575,82 @@ namespace WpfApp1.ViewModel
                             reader.CloseComm();
                             AddMessage(ex.Message);
                         }
-                        });
-                    }
-                    #endregion
-                    #region 报警记录
-                    // await Task.Run(()=> {
-                    try
+                    });
+                }
+                #endregion
+                #region 报警记录
+                // await Task.Run(()=> {
+                try
+                {
+                    //读报警
+                    M300 = fx5U.ReadMultiM("M3200", 800);
+                    if (M300 != null && StatusPLC)
                     {
-                        //读报警
-                        M300 = fx5U.ReadMultiM("M3200", 800);
-                        if (M300 != null && StatusPLC)
+                        for (int i = 0; i < AlarmList.Count; i++)
                         {
-                            for (int i = 0; i < AlarmList.Count; i++)
+                            if (M300[i] != AlarmList[i].State && AlarmList[i].Content != "Null")
                             {
-                                if (M300[i] != AlarmList[i].State && AlarmList[i].Content != "Null")
+                                AlarmList[i].State = M300[i];
+
+                                if (AlarmList[i].State)
                                 {
-                                    AlarmList[i].State = M300[i];
-                                    if (AlarmList[i].State)
+                                    isRecord = false;
+                                    if (i < 50)//上料机
                                     {
-                                        AlarmList[i].Start = DateTime.Now;
-                                        AlarmList[i].End = DateTime.Now;
-                                        AddMessage(AlarmList[i].Code + AlarmList[i].Content + "发生");
+                                        if (CurrentAlarmM1 != AlarmList[i].Content)
+                                        {
+                                            CurrentAlarmM1 = AlarmList[i].Content;
+                                            isRecord = true;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (i < 290)//撕膜A
+                                        {
+                                            if (CurrentAlarmM2_1 != AlarmList[i].Content)
+                                            {
+                                                CurrentAlarmM2_1 = AlarmList[i].Content;
+                                                isRecord = true;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (i < 490)//撕膜B
+                                            {
+                                                if (CurrentAlarmM2_2 != AlarmList[i].Content)
+                                                {
+                                                    CurrentAlarmM2_2 = AlarmList[i].Content;
+                                                    isRecord = true;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                if (i < 640)//贴膜A
+                                                {
+                                                    if (CurrentAlarmM3_1 != AlarmList[i].Content)
+                                                    {
+                                                        CurrentAlarmM3_1 = AlarmList[i].Content;
+                                                        isRecord = true;
+                                                    }
+                                                }
+                                                else //贴膜B
+                                                {
+                                                    if (CurrentAlarmM3_2 != AlarmList[i].Content)
+                                                    {
+                                                        CurrentAlarmM3_2 = AlarmList[i].Content;
+                                                        isRecord = true;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    AlarmList[i].Start = DateTime.Now;
+                                    AlarmList[i].End = DateTime.Now;
+                                    AddMessage(AlarmList[i].Code + AlarmList[i].Content + "发生");
+
+                                    if (isRecord)
+                                    {
                                         var nowAlarm = AlarmReportForm.FirstOrDefault(s => s.Code == AlarmList[i].Code);
                                         if (nowAlarm == null)
                                         {
@@ -564,89 +658,124 @@ namespace WpfApp1.ViewModel
                                             {
                                                 Code = AlarmList[i].Code,
                                                 Content = AlarmList[i].Content,
-                                                Count = 0,
+                                                Count = 1,
                                                 TimeSpan = AlarmList[i].End - AlarmList[i].Start
                                             };
 
                                             //Dispatcher.CurrentDispatcher.Invoke(new Action(() =>
                                             //{
-                                            
-                                                AlarmReportForm.Add(newAlarm);
-                                            //}));
-                                            WriteToJson(AlarmReportForm, System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json"));
+
+                                            AlarmReportForm.Add(newAlarm);
+                                            //}));                                            
                                         }
-                                        if (CurrentAlarm != AlarmList[i].Content)
-                                        {
-                                            string banci = GetBanci();
-                                            if (!File.Exists(Path.Combine("D:\\报警记录", "VPP报警记录" + banci + ".csv")))
-                                            {
-                                                string[] heads = new string[] { "时间", "内容" };
-                                                Csvfile.savetocsv(Path.Combine("D:\\报警记录", "VPP报警记录" + banci + ".csv"), heads);
-                                            }
-                                            string[] conts = new string[] { AlarmList[i].Start.ToString(), AlarmList[i].Content };
-                                            Csvfile.savetocsv(Path.Combine("D:\\报警记录", "VPP报警记录" + banci + ".csv"), conts);
-                                            CurrentAlarm = AlarmList[i].Content;
-                                            #region 上传
-                                            string Banci = (DateTime.Now.Hour >= 8 && DateTime.Now.Hour < 20) ? "D" : "N";
-                                            SXJ.Mysql mysql = new SXJ.Mysql();
-                                            if (mysql.Connect())
-                                            {
-                                                string stm = "insert into TED_WARN_DATA (WORKSTATION,PARTNUM,MACID,LOADID,PETID,TDATE,TTIME,CLASS,WARNID,DETAILID,WARNNUM,FL01,FL02,FL03,FL04,FL05,FL06,FL07,FL08,FL09,FL10,SUPPLIER,WARNVER) value('" + TestStation + "','" + ProgramName + "','" + MachineNumber + "','" + MachineNumber + "','','" + DateTime.Now.ToString("yyyyMMdd") + "','" + DateTime.Now.ToString("HHmmss") + "','" + Banci + "','" + AlarmList[i].Content + "','','1','','','','','','','','','','','" + Supplier + "','" + WARNVER + "')";
-                                                mysql.executeQuery(stm);
-                                            }
-                                            mysql.DisConnect();
-                                            #endregion
-                                        }
-                                    }
-                                    else
-                                    {
-                                        AlarmList[i].End = DateTime.Now;
-                                        AddMessage(AlarmList[i].Code + AlarmList[i].Content + "解除");
-                                        var nowAlarm = AlarmReportForm.FirstOrDefault(s => s.Code == AlarmList[i].Code);
-                                        if (nowAlarm != null)
+                                        else
                                         {
                                             nowAlarm.Count++;
-                                            nowAlarm.TimeSpan += AlarmList[i].End - AlarmList[i].Start;
-                                            WriteToJson(AlarmReportForm, System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json"));
                                         }
+                                        WriteToJson(AlarmReportForm, System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json"));
+
+                                        string banci = GetBanci();
+                                        if (!File.Exists(Path.Combine("D:\\报警记录", "VPP报警记录" + banci + ".csv")))
+                                        {
+                                            string[] heads = new string[] { "时间", "内容" };
+                                            Csvfile.savetocsv(Path.Combine("D:\\报警记录", "VPP报警记录" + banci + ".csv"), heads);
+                                        }
+                                        string[] conts = new string[] { AlarmList[i].Start.ToString(), AlarmList[i].Content };
+                                        Csvfile.savetocsv(Path.Combine("D:\\报警记录", "VPP报警记录" + banci + ".csv"), conts);
+
+                                        #region 上传
+                                        string Banci = (DateTime.Now.Hour >= 8 && DateTime.Now.Hour < 20) ? "D" : "N";
+                                        SXJ.Mysql mysql = new SXJ.Mysql();
+                                        if (mysql.Connect())
+                                        {
+                                            string stm = "insert into TED_WARN_DATA (WORKSTATION,PARTNUM,MACID,LOADID,PETID,TDATE,TTIME,CLASS,WARNID,DETAILID,WARNNUM,FL01,FL02,FL03,FL04,FL05,FL06,FL07,FL08,FL09,FL10,SUPPLIER,WARNVER) value('" + TestStation + "','" + ProgramName + "','" + MachineNumber + "','" + MachineNumber + "','','" + DateTime.Now.ToString("yyyyMMdd") + "','" + DateTime.Now.ToString("HHmmss") + "','" + Banci + "','" + AlarmList[i].Content + "','','1','','','','','','','','','','','" + Supplier + "','" + WARNVER + "')";
+                                            mysql.executeQuery(stm);
+                                        }
+                                        mysql.DisConnect();
+                                        #endregion
+
                                     }
+
+
+
+                                }
+                                else
+                                {
+                                    AlarmList[i].End = DateTime.Now;
+                                    AddMessage(AlarmList[i].Code + AlarmList[i].Content + "解除");
+                                    var nowAlarm = AlarmReportForm.FirstOrDefault(s => s.Code == AlarmList[i].Code);
+                                    if (nowAlarm != null)
+                                    {
+                                        //nowAlarm.Count++;
+                                        nowAlarm.TimeSpan += AlarmList[i].End - AlarmList[i].Start;
+                                        WriteToJson(AlarmReportForm, System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json"));
+                                    }
+
+
                                 }
                             }
-
                         }
+
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+                //});
+
+                #endregion
+                #region 换班
+                if (LastBanci != GetBanci())
+                {
+                    try
+                    {
+                        WriteAlarmtoExcel(Path.Combine("D:\\报警记录", "VPP报警统计" + LastBanci + ".xlsx"));
+                        //Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() => {
+                        AlarmReportForm.Clear();
+                        // }));
+
+
+                        WriteToJson(AlarmReportForm, System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json"));
+                        LastBanci = GetBanci();
+                        Inifile.INIWriteValue(iniParameterPath, "Summary", "LastBanci", LastBanci);
+                        AddMessage(LastBanci + " 换班数据清零");
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex.Message);
+                        AddMessage(ex.Message);
                     }
-                    //});
-
-                    #endregion
-                    #region 换班
-                    if (LastBanci != GetBanci())
+                }
+                #endregion
+                #region 妥善率
+                if (count2++ > 4)
+                {
+                    count2 = 0;
+                    try
                     {
-                        try
+                        PcsCout = fx5U.ReadDW("D6500");
+                        int _AlarmCount = 0;
+                        foreach (var item in AlarmReportForm)
                         {
-                            WriteAlarmtoExcel(Path.Combine("D:\\报警记录", "VPP报警统计" + LastBanci + ".xlsx"));
-                            //Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() => {
-                                AlarmReportForm.Clear();
-                           // }));
-
-
-                            WriteToJson(AlarmReportForm, System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json"));
-                            LastBanci = GetBanci();
-                            Inifile.INIWriteValue(iniParameterPath, "Summary", "LastBanci", LastBanci);
-                            AddMessage(LastBanci + " 换班数据清零");
+                            _AlarmCount += item.Count;
                         }
-                        catch (Exception ex)
+                        AlarmCout = _AlarmCount;
+                        if (PcsCout == 0)
                         {
-                            AddMessage(ex.Message);
+                            PassRadio = 100;
                         }
+                        else
+                        {
+                            PassRadio = Math.Round((1 - (double)_AlarmCount / PcsCout) * 100, 1);
+                        }
+                        
                     }
-                    #endregion
+                    catch { }
+                }
 
-                    await Task.Run(() =>
-                    {
+                #endregion
+                await Task.Run(() =>
+                {
                     if (DateTime.Now.Minute != oldMinute)
                     {
                         oldMinute = DateTime.Now.Minute;
@@ -686,11 +815,11 @@ namespace WpfApp1.ViewModel
 
                         #endregion
                     }
-                    });
-                }
+                });
+            }
 
             //});
-            
+
         }
         void PLCRun()
         {

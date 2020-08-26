@@ -50,5 +50,21 @@
                 </StackPanel>
             </GroupBox>
         </Grid>
+        <Grid Grid.Row="1" Grid.Column="1">
+            <GroupBox Header="机台参数">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="妥善率 = 1 - "></TextBlock>
+                    <TextBlock Text="{Binding AlarmCout}"></TextBlock>
+                    <TextBlock Text=" / "></TextBlock>
+                    <TextBlock Text="{Binding PcsCout}"></TextBlock>
+                    <TextBlock Text=" = "></TextBlock>
+                    <TextBlock Text="{Binding PassRadio}"></TextBlock>
+                    <TextBlock Text="%"></TextBlock>
+                    <!--<Button Height="30" Width="60" Command="{Binding FuncCommand}"></Button>-->
+                </StackPanel>
+                
+                
+            </GroupBox>
+        </Grid>
     </Grid>
 </UserControl>
