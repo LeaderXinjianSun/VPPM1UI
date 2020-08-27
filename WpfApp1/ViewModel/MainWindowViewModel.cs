@@ -250,6 +250,7 @@ namespace WpfApp1.ViewModel
         string LastBanci;
         List<SXJ.AlarmData> AlarmList = new List<SXJ.AlarmData>();
         DispatcherTimer dispatcherTimer = new DispatcherTimer();
+        int D301 = -1, D302 = -1;
         #endregion
         #region 构造函数
         public MainWindowViewModel()
@@ -275,7 +276,75 @@ namespace WpfApp1.ViewModel
         /// <param name="e"></param>
         private void DispatcherTimer_Tick(object sender, EventArgs e)
         {
-            
+//            项目 说明  优先级
+//机台停机时间  待料 上料盘、下料盘传感器感应无料  0
+//    换膜 剥膜失败报警、NG盘满 1
+//    样本 样本测试    2
+//    报警 测试机 测试机报警   3
+//    故障 急停、开门、非运行流程 4
+//    报警 上料机 上料机所有报警 5
+//机台运行时间              6
+
+            switch (D301)
+            {
+                case 1:
+                    MachineStateA.DaiLiao += (double)1 / 60;
+                    break;
+                case 2:
+                    MachineStateA.HuanMo += (double)1 / 60;
+                    break;
+                case 3:
+                    MachineStateA.YangBen += (double)1 / 60;
+                    break;
+                case 4:
+                    MachineStateA.TesterAlarm += (double)1 / 60;
+                    break;
+                case 5:
+                    MachineStateA.Down += (double)1 / 60;
+                    break;
+                case 6:
+                    MachineStateA.UploaderAlarm += (double)1 / 60;
+                    break;
+                case 7:
+                    MachineStateA.Run += (double)1 / 60;
+                    break;
+                default:
+                    break;
+            }
+            if (D301 > 0 && D301 < 8)
+            {
+                WriteToJson(MachineStateA, System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateA.json"));
+            }
+            switch (D302)
+            {
+                case 1:
+                    MachineStateB.DaiLiao += (double)1 / 60;
+                    break;
+                case 2:
+                    MachineStateB.HuanMo += (double)1 / 60;
+                    break;
+                case 3:
+                    MachineStateB.YangBen += (double)1 / 60;
+                    break;
+                case 4:
+                    MachineStateB.TesterAlarm += (double)1 / 60;
+                    break;
+                case 5:
+                    MachineStateB.Down += (double)1 / 60;
+                    break;
+                case 6:
+                    MachineStateB.UploaderAlarm += (double)1 / 60;
+                    break;
+                case 7:
+                    MachineStateB.Run += (double)1 / 60;
+                    break;
+                default:
+                    break;
+            }
+            if (D302 > 0 && D302 < 8)
+            {
+                WriteToJson(MachineStateB, System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateB.json"));
+            }
         }
         #endregion
         #region 方法绑定函数
@@ -931,6 +1000,8 @@ namespace WpfApp1.ViewModel
                     //写PLC
                     fx5U.SetMultiM("M2200", PLCOUT);
                     fx5U.SetM("M400", true);
+                    D301 = fx5U.ReadW("D301");
+                    D302 = fx5U.ReadW("D302");
                 }
                 catch { }
             }

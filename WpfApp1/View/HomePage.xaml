@@ -79,10 +79,10 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="项目" VerticalAlignment="Center" FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
                                     <TextBlock Text="待料" Foreground="HotPink" VerticalAlignment="Center" ToolTip="上料盘、下料盘传感器感应无料" Grid.Row="1" HorizontalAlignment="Center"></TextBlock>
-                                    <TextBlock Text="换膜" Foreground="HotPink" VerticalAlignment="Center" ToolTip="剥膜失败报警" Grid.Row="2" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="换膜" Foreground="HotPink" VerticalAlignment="Center" ToolTip="剥膜失败报警、NG盘满" Grid.Row="2" HorizontalAlignment="Center"></TextBlock>
                                     <TextBlock Text="样本" Foreground="HotPink" VerticalAlignment="Center" ToolTip="样本测试" Grid.Row="3" HorizontalAlignment="Center"></TextBlock>
                                     <TextBlock Text="测试机报警" Foreground="DarkGoldenrod" VerticalAlignment="Center" ToolTip="测试机报警" Grid.Row="4" HorizontalAlignment="Center"></TextBlock>
-                                    <TextBlock Text="故障" Foreground="DarkBlue" VerticalAlignment="Center" ToolTip="急停、开门" Grid.Row="5" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="故障" Foreground="DarkBlue" VerticalAlignment="Center" ToolTip="急停、开门、非运行流程" Grid.Row="5" HorizontalAlignment="Center"></TextBlock>
                                     <TextBlock Text="上料机报警" Foreground="DarkBlue" VerticalAlignment="Center" ToolTip="上料机报警" Grid.Row="6" HorizontalAlignment="Center"></TextBlock>
                                     <TextBlock Text="运行" Foreground="Green" VerticalAlignment="Center" Grid.Row="7" HorizontalAlignment="Center"></TextBlock>
 
@@ -114,10 +114,10 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="项目" VerticalAlignment="Center" FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
                                     <TextBlock Text="待料" Foreground="HotPink" VerticalAlignment="Center" ToolTip="上料盘、下料盘传感器感应无料" Grid.Row="1" HorizontalAlignment="Center"></TextBlock>
-                                    <TextBlock Text="换膜" Foreground="HotPink" VerticalAlignment="Center" ToolTip="剥膜失败报警" Grid.Row="2" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="换膜" Foreground="HotPink" VerticalAlignment="Center" ToolTip="剥膜失败报警、NG盘满" Grid.Row="2" HorizontalAlignment="Center"></TextBlock>
                                     <TextBlock Text="样本" Foreground="HotPink" VerticalAlignment="Center" ToolTip="样本测试" Grid.Row="3" HorizontalAlignment="Center"></TextBlock>
                                     <TextBlock Text="测试机报警" Foreground="DarkGoldenrod" VerticalAlignment="Center" ToolTip="测试机报警" Grid.Row="4" HorizontalAlignment="Center"></TextBlock>
-                                    <TextBlock Text="故障" Foreground="DarkBlue" VerticalAlignment="Center" ToolTip="急停、开门" Grid.Row="5" HorizontalAlignment="Center"></TextBlock>
+                                    <TextBlock Text="故障" Foreground="DarkBlue" VerticalAlignment="Center" ToolTip="急停、开门、非运行流程" Grid.Row="5" HorizontalAlignment="Center"></TextBlock>
                                     <TextBlock Text="上料机报警" Foreground="DarkBlue" VerticalAlignment="Center" ToolTip="上料机报警" Grid.Row="6" HorizontalAlignment="Center"></TextBlock>
                                     <TextBlock Text="运行" Foreground="Green" VerticalAlignment="Center" Grid.Row="7" HorizontalAlignment="Center"></TextBlock>
 
