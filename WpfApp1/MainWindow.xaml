@@ -23,10 +23,12 @@
         </Grid.RowDefinitions>
         <Menu VerticalAlignment="Center">
             <MenuItem Header="主页" Command="{Binding MenuActionCommand}" CommandParameter="0"></MenuItem>
-            <MenuItem Header="报警统计" Command="{Binding MenuActionCommand}" CommandParameter="1"></MenuItem>
+            <MenuItem Header="报警统计1" Command="{Binding MenuActionCommand}" CommandParameter="1"></MenuItem>
+            <MenuItem Header="报警统计2" Command="{Binding MenuActionCommand}" CommandParameter="2"></MenuItem>
         </Menu>
         <Views:HomePage Grid.Row="1" Visibility="{Binding HomePageVisibility}"></Views:HomePage>
         <Views:AlarmReportFormPage Grid.Row="1" Visibility="{Binding AlarmReportFormPageVisibility,FallbackValue=Collapsed}"></Views:AlarmReportFormPage>
+        <Views:AlarmStatisticsPage Grid.Row="1" Visibility="{Binding AlarmStatisticsPageVisibility,FallbackValue=Collapsed}"></Views:AlarmStatisticsPage>
         <StatusBar Grid.Row="2">
             <StatusBarItem>
                 <StackPanel Orientation="Horizontal">

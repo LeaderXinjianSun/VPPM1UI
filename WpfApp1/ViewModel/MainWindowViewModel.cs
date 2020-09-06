@@ -159,6 +159,18 @@ namespace WpfApp1.ViewModel
                 this.RaisePropertyChanged("AlarmReportFormPageVisibility");
             }
         }
+        private string alarmStatisticsPageVisibility;
+
+        public string AlarmStatisticsPageVisibility
+        {
+            get { return alarmStatisticsPageVisibility; }
+            set
+            {
+                alarmStatisticsPageVisibility = value;
+                this.RaisePropertyChanged("AlarmStatisticsPageVisibility");
+            }
+        }
+
         private ObservableCollection<AlarmReportFormViewModel> alarmReportForm;
 
         public ObservableCollection<AlarmReportFormViewModel> AlarmReportForm
@@ -230,12 +242,37 @@ namespace WpfApp1.ViewModel
                 this.RaisePropertyChanged("MachineStateB");
             }
         }
+        private DateTime alarmSelectStartDate;
+
+        public DateTime AlarmSelectStartDate
+        {
+            get { return alarmSelectStartDate; }
+            set
+            {
+                alarmSelectStartDate = value;
+                this.RaisePropertyChanged("AlarmSelectStartDate");
+            }
+        }
+        private DateTime alarmSelectEndtDate;
+
+        public DateTime AlarmSelectEndtDate
+        {
+            get { return alarmSelectEndtDate; }
+            set
+            {
+                alarmSelectEndtDate = value;
+                this.RaisePropertyChanged("AlarmSelectEndtDate");
+            }
+        }
+
         #endregion
         #region 方法绑定
         public DelegateCommand<object> MenuActionCommand { get; set; }
         public DelegateCommand BigDataPeramEditCommand { get; set; }
         public DelegateCommand AlarmReportFromExportCommand { get; set; }
-        public DelegateCommand FuncCommand { get; set; }        
+        public DelegateCommand FuncCommand { get; set; }
+        public DelegateCommand CheckAlarmFromDtCommand { get; set; }
+        public DelegateCommand ExportAlarmCommand { get; set; }
         #endregion
         #region 变量
         private string iniParameterPath = System.Environment.CurrentDirectory + "\\Parameter.ini";
@@ -259,6 +296,8 @@ namespace WpfApp1.ViewModel
             BigDataPeramEditCommand = new DelegateCommand(new Action(this.BigDataPeramEditCommandExecute));
             AlarmReportFromExportCommand = new DelegateCommand(new Action(this.AlarmReportFromExportCommandExecute));
             FuncCommand = new DelegateCommand(new Action(this.FuncCommandExecute));
+            CheckAlarmFromDtCommand = new DelegateCommand(new Action(this.CheckAlarmFromDtCommandExecute));
+            ExportAlarmCommand = new DelegateCommand(new Action(this.ExportAlarmCommandExecute));
             fx5U.ConnectStateChanged += Fx5uConnectStateChanged;
             dispatcherTimer.Interval = new TimeSpan(0, 0, 1);
             //dispatcherTimer.Tick += DispatcherTimer_Tick;
@@ -355,10 +394,17 @@ namespace WpfApp1.ViewModel
                 case "0":
                     HomePageVisibility = "Visible";
                     AlarmReportFormPageVisibility = "Collapsed";
+                    AlarmStatisticsPageVisibility = "Collapsed";
                     break;
                 case "1":
                     HomePageVisibility = "Collapsed";
                     AlarmReportFormPageVisibility = "Visible";
+                    AlarmStatisticsPageVisibility = "Collapsed";
+                    break;
+                case "2":
+                    HomePageVisibility = "Collapsed";
+                    AlarmReportFormPageVisibility = "Collapsed";
+                    AlarmStatisticsPageVisibility = "Visible";
                     break;
                 default:
                     break;
@@ -406,8 +452,19 @@ namespace WpfApp1.ViewModel
             //var aa = 147 << 8;
             //WriteStatetoExcel(Path.Combine("D:\\报警记录", "VPP时间统计" + LastBanci + ".xlsx"));
         }
+        private void CheckAlarmFromDtCommandExecute()
+        {
+            var aa = AlarmSelectStartDate;
+        }
+        private void ExportAlarmCommandExecute()
+        {
+
+        }
         #endregion
         #region 自定义函数
+        //# INSERT INTO ldr_warn_data (WORKSTATION,MACID,WARNID,DETAILID,STARTTIME,SUPPLIER) VALUES ('VPP','VPP-03','M300','吸取失败了','2018-11-05 20:29:36','LDR')
+        //# SELECT * FROM ldr_warn_data WHERE STARTTIME BETWEEN '2016-1-1 12:29:00' AND '2019-1-1 12:29:00' ORDER BY STARTTIME ASC
+        //# UPDATE ldr_warn_data SET ENDTIME = NOW() WHERE WORKSTATION = 'VPP' AND MACID = 'VPP-03' AND STARTTIME = '2017-11-05 20:29:36'
         private void Init()
         {
             Version = "1.0830";
@@ -427,7 +484,9 @@ namespace WpfApp1.ViewModel
             LastBanci = Inifile.INIGetStringValue(iniParameterPath, "Summary", "LastBanci", "null");
             HomePageVisibility = "Visible";
             AlarmReportFormPageVisibility = "Collapsed";
-
+            AlarmStatisticsPageVisibility = "Collapsed";
+            AlarmSelectStartDate = DateTime.Now;
+            AlarmSelectEndtDate = DateTime.Now;
             try
             {
                 using (StreamReader reader = new StreamReader(System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json")))
@@ -744,7 +803,7 @@ namespace WpfApp1.ViewModel
                 try
                 {
                     //读报警
-                    M300 = fx5U.ReadMultiM("M3200", 800);
+                    M300 = await Task<bool[]>.Run(() => {return fx5U.ReadMultiM("M3200", 800); }); 
                     if (M300 != null && StatusPLC)
                     {
                         for (int i = 0; i < AlarmList.Count; i++)
@@ -1003,7 +1062,7 @@ namespace WpfApp1.ViewModel
                     D301 = fx5U.ReadW("D301");
                     D302 = fx5U.ReadW("D302");
                 }
-                catch { }
+                catch { System.Threading.Thread.Sleep(10000); }
             }
         }
         private void AddMessage(string str)
