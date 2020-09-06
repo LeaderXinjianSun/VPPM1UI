@@ -54,7 +54,7 @@
                         </StackPanel>
                     </StackPanel>
                 </GroupBox>
-                <GroupBox Header="机台参数" Grid.Row="1">
+                <!--<GroupBox Header="机台参数" Grid.Row="1" >
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition></RowDefinition>
@@ -141,13 +141,13 @@
                             <TextBlock Text=" = "></TextBlock>
                             <TextBlock Text="{Binding PassRadio}"></TextBlock>
                             <TextBlock Text="%"></TextBlock>
-                            <!--<Button Content="功能" Command="{Binding FuncCommand}"></Button>-->
+                            --><!--<Button Content="功能" Command="{Binding FuncCommand}"></Button>--><!--
                         </StackPanel>
                     </Grid>
 
 
 
-                </GroupBox>
+                </GroupBox>-->
             </Grid>
 
         </Grid>

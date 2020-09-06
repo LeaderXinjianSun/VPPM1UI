@@ -261,8 +261,8 @@ namespace WpfApp1.ViewModel
             FuncCommand = new DelegateCommand(new Action(this.FuncCommandExecute));
             fx5U.ConnectStateChanged += Fx5uConnectStateChanged;
             dispatcherTimer.Interval = new TimeSpan(0, 0, 1);
-            dispatcherTimer.Tick += DispatcherTimer_Tick;
-            dispatcherTimer.Start();
+            //dispatcherTimer.Tick += DispatcherTimer_Tick;
+            //dispatcherTimer.Start();
             Init();
             Task.Run(() => { PLCRun(); });
             checkIOReceiveNet();
@@ -410,7 +410,7 @@ namespace WpfApp1.ViewModel
         #region 自定义函数
         private void Init()
         {
-            Version = "1.0826";
+            Version = "1.0830";
             MessageStr = "";
             BigDataEditIsReadOnly = true;
             BigDataPeramEdit = "Edit";
@@ -895,11 +895,11 @@ namespace WpfApp1.ViewModel
                         AlarmReportForm.Clear();
                         WriteToJson(AlarmReportForm, System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json"));
 
-                        WriteStatetoExcel(Path.Combine("D:\\报警记录", "VPP时间统计" + LastBanci + ".xlsx"));
-                        MachineStateA.Clean();
-                        WriteToJson(MachineStateA, System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateA.json"));
-                        MachineStateB.Clean();
-                        WriteToJson(MachineStateB, System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateB.json"));
+                        //WriteStatetoExcel(Path.Combine("D:\\报警记录", "VPP时间统计" + LastBanci + ".xlsx"));
+                        //MachineStateA.Clean();
+                        //WriteToJson(MachineStateA, System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateA.json"));
+                        //MachineStateB.Clean();
+                        //WriteToJson(MachineStateB, System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateB.json"));
 
                         LastBanci = GetBanci();
                         Inifile.INIWriteValue(iniParameterPath, "Summary", "LastBanci", LastBanci);
