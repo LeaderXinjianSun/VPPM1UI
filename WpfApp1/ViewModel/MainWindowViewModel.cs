@@ -9,6 +9,7 @@ using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -264,6 +265,61 @@ namespace WpfApp1.ViewModel
                 this.RaisePropertyChanged("AlarmSelectEndtDate");
             }
         }
+        private DataTable alarmSelectFormDt;
+
+        public DataTable AlarmSelectFormDt
+        {
+            get { return alarmSelectFormDt; }
+            set
+            {
+                alarmSelectFormDt = value;
+                this.RaisePropertyChanged("AlarmSelectFormDt");
+            }
+        }
+        private ObservableCollection<AlarmReportFormViewModel> alarmStatictic;
+
+        public ObservableCollection<AlarmReportFormViewModel> AlarmStatictic
+        {
+            get { return alarmStatictic; }
+            set
+            {
+                alarmStatictic = value;
+                this.RaisePropertyChanged("AlarmStatictic");
+            }
+        }
+        private int totalAlarmCount;
+
+        public int TotalAlarmCount
+        {
+            get { return totalAlarmCount; }
+            set
+            {
+                totalAlarmCount = value;
+                this.RaisePropertyChanged("TotalAlarmCount");
+            }
+        }
+        private TimeSpan totalAlarmTimeSpan;
+
+        public TimeSpan TotalAlarmTimeSpan
+        {
+            get { return totalAlarmTimeSpan; }
+            set
+            {
+                totalAlarmTimeSpan = value;
+                this.RaisePropertyChanged("TotalAlarmTimeSpan");
+            }
+        }
+        private bool checkDbButtonIsEnabled;
+
+        public bool CheckDbButtonIsEnabled
+        {
+            get { return checkDbButtonIsEnabled; }
+            set
+            {
+                checkDbButtonIsEnabled = value;
+                this.RaisePropertyChanged("CheckDbButtonIsEnabled");
+            }
+        }
 
         #endregion
         #region 方法绑定
@@ -452,22 +508,152 @@ namespace WpfApp1.ViewModel
             //var aa = 147 << 8;
             //WriteStatetoExcel(Path.Combine("D:\\报警记录", "VPP时间统计" + LastBanci + ".xlsx"));
         }
-        private void CheckAlarmFromDtCommandExecute()
+        private async void CheckAlarmFromDtCommandExecute()
         {
-            var aa = AlarmSelectStartDate;
-        }
-        private void ExportAlarmCommandExecute()
-        {
+            //# INSERT INTO ldr_warn_data (WORKSTATION,MACID,WARNID,DETAILID,STARTTIME,SUPPLIER) VALUES ('VPP','VPP-03','M300','吸取失败了','2018-11-05 20:29:36','LDR')
+            //# SELECT * FROM ldr_warn_data WHERE STARTTIME BETWEEN '2016-1-1 12:29:00' AND '2019-1-1 12:29:00' ORDER BY STARTTIME ASC
+            //# UPDATE ldr_warn_data SET ENDTIME = NOW() WHERE WORKSTATION = 'VPP' AND MACID = 'VPP-03' AND STARTTIME = '2017-11-05 20:29:36'
+            CheckDbButtonIsEnabled = false;
+            try
+            {
+                AlarmSelectFormDt = await Task.Run<DataTable>(() => {
+                    SXJ.Mysql mysql = new SXJ.Mysql();
+                    if (mysql.Connect())
+                    {
+                        string stm = $"SELECT * FROM LDR_WARN_DATA WHERE WORKSTATION = '{TestStation}' AND MACID = '{MachineNumber}' AND STARTTIME BETWEEN '{AlarmSelectStartDate}' AND '{AlarmSelectEndtDate}' ORDER BY SYSDATETIME DESC";
+                        DataSet ds = mysql.Select(stm);
+                        mysql.DisConnect();
+                        return ds.Tables["table0"];
+                    }
+                    mysql.DisConnect();
+                    return null;
+                });
+                AlarmStatictic.Clear();
+                TotalAlarmCount = 0;
+                TotalAlarmTimeSpan = TimeSpan.Zero;
+                if (AlarmSelectFormDt != null && AlarmSelectFormDt.Rows.Count > 0)
+                {
 
+
+                    for (int i = 0; i < AlarmSelectFormDt.Rows.Count; i++)
+                    {
+                        try
+                        {
+                            if (AlarmSelectFormDt.Rows[i]["STARTTIME"] != DBNull.Value && AlarmSelectFormDt.Rows[i]["ENDTIME"] != DBNull.Value)
+                            {
+                                var nowAlarm = AlarmStatictic.FirstOrDefault(s => s.Code == AlarmList[i].Code);
+                                if (nowAlarm == null)
+                                {
+                                    AlarmReportFormViewModel newAlarm = new AlarmReportFormViewModel()
+                                    {
+                                        Code = (string)AlarmSelectFormDt.Rows[i]["WARNID"],
+                                        Content = (string)AlarmSelectFormDt.Rows[i]["DETAILID"],
+                                        Count = 1,
+                                        TimeSpan = Convert.ToDateTime(AlarmSelectFormDt.Rows[i]["ENDTIME"]) - Convert.ToDateTime(AlarmSelectFormDt.Rows[i]["STARTTIME"])
+                                    };
+
+                                    AlarmStatictic.Add(newAlarm);
+                                }
+                                else
+                                {
+                                    nowAlarm.Count++;
+                                    nowAlarm.TimeSpan += Convert.ToDateTime(AlarmSelectFormDt.Rows[i]["ENDTIME"]) - Convert.ToDateTime(AlarmSelectFormDt.Rows[i]["STARTTIME"]);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            AddMessage(ex.Message);
+                        }
+                        
+                    }
+
+                    foreach (var item in AlarmStatictic)
+                    {
+                        TotalAlarmCount += item.Count;
+                        TotalAlarmTimeSpan += item.TimeSpan;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AddMessage(ex.Message);
+            }
+            CheckDbButtonIsEnabled = true;
+        }
+        private  void ExportAlarmCommandExecute()
+        {
+            Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
+            //dlg.FileName = "AlarmReport"; // Default file name
+            //dlg.DefaultExt = ".xlsx"; // Default file extension
+            dlg.Filter = "Text Files(*.xlsx)|*.xlsx|All(*.*)|*"; // Filter files by extension
+
+            // Show save file dialog box
+            Nullable<bool> result = dlg.ShowDialog();
+
+            // Process save file dialog box results
+            if (result == true)
+            {
+                // Save document
+                try
+                {
+                    using (ExcelPackage package = new ExcelPackage())
+                    {
+                        var ws = package.Workbook.Worksheets.Add("机台报警统计"+DateTime.Now.ToString("yyyyMMddHHmmss"));
+                        ws.Cells[1, 1].Value = "报警代码";
+                        ws.Cells[1, 2].Value = "报警内容";
+                        ws.Cells[1, 3].Value = "报警次数";
+                        ws.Cells[1, 4].Value = "报警时长";
+                        ws.Cells[1, 5].Value = MachineNumber;
+                        ws.Cells[1, 6].Value = DateTime.Now.ToString();
+                        for (int i = 0; i < AlarmStatictic.Count; i++)
+                        {
+                            ws.Cells[i + 2, 1].Value = AlarmStatictic[i].Code;
+                            ws.Cells[i + 2, 2].Value = AlarmStatictic[i].Content;
+                            ws.Cells[i + 2, 3].Value = AlarmStatictic[i].Count;
+                            ws.Cells[i + 2, 4].Value = AlarmStatictic[i].TimeSpan.ToString();
+                        }
+                        ws.Cells[AlarmStatictic.Count + 2, 2].Value = "Total:";
+                        ws.Cells[AlarmStatictic.Count + 2, 3].Value = TotalAlarmCount;
+                        ws.Cells[AlarmStatictic.Count + 2, 4].Value = TotalAlarmTimeSpan.ToString();
+
+                        ws = package.Workbook.Worksheets.Add("机台报警明细" + DateTime.Now.ToString("yyyyMMddHHmmss"));
+                        ws.Cells[1, 1].Value = "工站";
+                        ws.Cells[1, 2].Value = "机台编号";
+                        ws.Cells[1, 3].Value = "报警代码";
+                        ws.Cells[1, 4].Value = "报警内容";
+                        ws.Cells[1, 5].Value = "开始时间";
+                        ws.Cells[1, 6].Value = "结束时间";
+                        ws.Cells[1, 7].Value = "厂商代码";
+                        ws.Cells[1, 8].Value = "系统时间";
+                        ws.Cells[1, 9].Value = DateTime.Now.ToString();
+                        for (int i = 0; i < AlarmSelectFormDt.Rows.Count; i++)
+                        {
+                            ws.Cells[i + 2, 1].Value = AlarmSelectFormDt.Rows[i]["WORKSTATION"];
+                            ws.Cells[i + 2, 2].Value = AlarmSelectFormDt.Rows[i]["MACID"];
+                            ws.Cells[i + 2, 3].Value = AlarmSelectFormDt.Rows[i]["WARNID"];
+                            ws.Cells[i + 2, 4].Value = AlarmSelectFormDt.Rows[i]["DETAILID"];
+                            ws.Cells[i + 2, 5].Value = AlarmSelectFormDt.Rows[i]["STARTTIME"].ToString();
+                            ws.Cells[i + 2, 6].Value = AlarmSelectFormDt.Rows[i]["ENDTIME"].ToString();
+                            ws.Cells[i + 2, 7].Value = AlarmSelectFormDt.Rows[i]["SUPPLIER"];
+                            ws.Cells[i + 2, 8].Value = AlarmSelectFormDt.Rows[i]["SYSDATETIME"].ToString();
+                        }
+
+                        package.SaveAs(new FileInfo(dlg.FileName));
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    AddMessage(ex.Message);
+                }
+            }
         }
         #endregion
         #region 自定义函数
-        //# INSERT INTO ldr_warn_data (WORKSTATION,MACID,WARNID,DETAILID,STARTTIME,SUPPLIER) VALUES ('VPP','VPP-03','M300','吸取失败了','2018-11-05 20:29:36','LDR')
-        //# SELECT * FROM ldr_warn_data WHERE STARTTIME BETWEEN '2016-1-1 12:29:00' AND '2019-1-1 12:29:00' ORDER BY STARTTIME ASC
-        //# UPDATE ldr_warn_data SET ENDTIME = NOW() WHERE WORKSTATION = 'VPP' AND MACID = 'VPP-03' AND STARTTIME = '2017-11-05 20:29:36'
         private void Init()
         {
-            Version = "1.0830";
+            Version = "1.0907";
             MessageStr = "";
             BigDataEditIsReadOnly = true;
             BigDataPeramEdit = "Edit";
@@ -487,6 +673,8 @@ namespace WpfApp1.ViewModel
             AlarmStatisticsPageVisibility = "Collapsed";
             AlarmSelectStartDate = DateTime.Now;
             AlarmSelectEndtDate = DateTime.Now;
+            AlarmStatictic = new ObservableCollection<AlarmReportFormViewModel>();
+            CheckDbButtonIsEnabled = true;
             try
             {
                 using (StreamReader reader = new StreamReader(System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json")))
@@ -502,52 +690,52 @@ namespace WpfApp1.ViewModel
                 AddMessage(ex.Message);
             }
 
-            try
-            {
-                using (StreamReader reader = new StreamReader(System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateA.json")))
-                {
-                    string json = reader.ReadToEnd();
-                    MachineStateA = JsonConvert.DeserializeObject<MachineStateViewModel>(json);
-                }
-            }
-            catch (Exception ex)
-            {
-                MachineStateA = new MachineStateViewModel()
-                {
-                    DaiLiao = 0,
-                    HuanMo = 0,
-                    YangBen = 0,
-                    TesterAlarm = 0,
-                    Down = 0,
-                    UploaderAlarm = 0,
-                    Run = 0
-                };
-                WriteToJson(MachineStateA, System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateA.json"));
-                AddMessage(ex.Message);
-            }
-            try
-            {
-                using (StreamReader reader = new StreamReader(System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateB.json")))
-                {
-                    string json = reader.ReadToEnd();
-                    MachineStateB = JsonConvert.DeserializeObject<MachineStateViewModel>(json);
-                }
-            }
-            catch (Exception ex)
-            {
-                MachineStateB = new MachineStateViewModel()
-                {
-                    DaiLiao = 0,
-                    HuanMo = 0,
-                    YangBen = 0,
-                    TesterAlarm = 0,
-                    Down = 0,
-                    UploaderAlarm = 0,
-                    Run = 0
-                };
-                WriteToJson(MachineStateB, System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateB.json"));
-                AddMessage(ex.Message);
-            }
+            //try
+            //{
+            //    using (StreamReader reader = new StreamReader(System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateA.json")))
+            //    {
+            //        string json = reader.ReadToEnd();
+            //        MachineStateA = JsonConvert.DeserializeObject<MachineStateViewModel>(json);
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    MachineStateA = new MachineStateViewModel()
+            //    {
+            //        DaiLiao = 0,
+            //        HuanMo = 0,
+            //        YangBen = 0,
+            //        TesterAlarm = 0,
+            //        Down = 0,
+            //        UploaderAlarm = 0,
+            //        Run = 0
+            //    };
+            //    WriteToJson(MachineStateA, System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateA.json"));
+            //    AddMessage(ex.Message);
+            //}
+            //try
+            //{
+            //    using (StreamReader reader = new StreamReader(System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateB.json")))
+            //    {
+            //        string json = reader.ReadToEnd();
+            //        MachineStateB = JsonConvert.DeserializeObject<MachineStateViewModel>(json);
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    MachineStateB = new MachineStateViewModel()
+            //    {
+            //        DaiLiao = 0,
+            //        HuanMo = 0,
+            //        YangBen = 0,
+            //        TesterAlarm = 0,
+            //        Down = 0,
+            //        UploaderAlarm = 0,
+            //        Run = 0
+            //    };
+            //    WriteToJson(MachineStateB, System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateB.json"));
+            //    AddMessage(ex.Message);
+            //}
             #region 报警文档
             try
             {
@@ -904,14 +1092,19 @@ namespace WpfApp1.ViewModel
                                         Csvfile.savetocsv(Path.Combine("D:\\报警记录", "VPP报警记录" + banci + ".csv"), conts);
 
                                         #region 上传
-                                        string Banci = (DateTime.Now.Hour >= 8 && DateTime.Now.Hour < 20) ? "D" : "N";
-                                        SXJ.Mysql mysql = new SXJ.Mysql();
-                                        if (mysql.Connect())
-                                        {
-                                            string stm = "insert into TED_WARN_DATA (WORKSTATION,PARTNUM,MACID,LOADID,PETID,TDATE,TTIME,CLASS,WARNID,DETAILID,WARNNUM,FL01,FL02,FL03,FL04,FL05,FL06,FL07,FL08,FL09,FL10,SUPPLIER,WARNVER) value('" + TestStation + "','" + ProgramName + "','" + MachineNumber + "','" + MachineNumber + "','','" + DateTime.Now.ToString("yyyyMMdd") + "','" + DateTime.Now.ToString("HHmmss") + "','" + Banci + "','" + AlarmList[i].Content + "','','1','','','','','','','','','','','" + Supplier + "','" + WARNVER + "')";
-                                            mysql.executeQuery(stm);
-                                        }
-                                        mysql.DisConnect();
+                                        await Task.Run(()=> {
+                                            string Banci = (DateTime.Now.Hour >= 8 && DateTime.Now.Hour < 20) ? "D" : "N";
+                                            SXJ.Mysql mysql = new SXJ.Mysql();
+                                            if (mysql.Connect())
+                                            {
+                                                string stm = "insert into TED_WARN_DATA (WORKSTATION,PARTNUM,MACID,LOADID,PETID,TDATE,TTIME,CLASS,WARNID,DETAILID,WARNNUM,FL01,FL02,FL03,FL04,FL05,FL06,FL07,FL08,FL09,FL10,SUPPLIER,WARNVER) value('" + TestStation + "','" + ProgramName + "','" + MachineNumber + "','" + MachineNumber + "','','" + DateTime.Now.ToString("yyyyMMdd") + "','" + DateTime.Now.ToString("HHmmss") + "','" + Banci + "','" + AlarmList[i].Content + "','','1','','','','','','','','','','','" + Supplier + "','" + WARNVER + "')";
+                                                mysql.executeQuery(stm);
+                                                stm = $"INSERT INTO LDR_WARN_DATA (WORKSTATION, MACID, WARNID, DETAILID, STARTTIME, SUPPLIER) VALUES ('{TestStation}', '{MachineNumber}', '{AlarmList[i].Code}', '{AlarmList[i].Content}', '{AlarmList[i].Start}', '{Supplier}')";
+                                                mysql.executeQuery(stm);
+                                            }
+                                            mysql.DisConnect();
+                                        });
+
                                         #endregion
 
                                     }
@@ -930,7 +1123,18 @@ namespace WpfApp1.ViewModel
                                         nowAlarm.TimeSpan += AlarmList[i].End - AlarmList[i].Start;
                                         WriteToJson(AlarmReportForm, System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json"));
                                     }
+                                    #region 上传
+                                    await Task.Run(() => {
+                                        SXJ.Mysql mysql = new SXJ.Mysql();
+                                        if (mysql.Connect())
+                                        {
+                                            string stm = $"UPDATE LDR_WARN_DATA SET ENDTIME = '{AlarmList[i].End}' WHERE WORKSTATION = '{TestStation}' AND MACID = '{MachineNumber}' AND STARTTIME = '{AlarmList[i].Start}'";
+                                            mysql.executeQuery(stm);
+                                        }
+                                        mysql.DisConnect();
+                                    });
 
+                                    #endregion
 
                                 }
                             }

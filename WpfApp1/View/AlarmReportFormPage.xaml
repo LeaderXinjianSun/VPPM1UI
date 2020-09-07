@@ -11,7 +11,14 @@
             <RowDefinition></RowDefinition>
             <RowDefinition Height="50"></RowDefinition>
         </Grid.RowDefinitions>
-        <DataGrid Margin="1" GridLinesVisibility="All" IsReadOnly="True" ItemsSource="{Binding AlarmReportForm}"></DataGrid>
+        <DataGrid Margin="1" GridLinesVisibility="All" IsReadOnly="True" ItemsSource="{Binding AlarmReportForm}" AutoGenerateColumns="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="报警代码" Binding="{Binding Code}"></DataGridTextColumn>
+                <DataGridTextColumn Header="报警内容" Binding="{Binding Content}"></DataGridTextColumn>
+                <DataGridTextColumn Header="数量" Binding="{Binding Count}"></DataGridTextColumn>
+                <DataGridTextColumn Header="时间" Binding="{Binding TimeSpan, StringFormat={}{0:'hh':'mm':'ss}}"></DataGridTextColumn>
+            </DataGrid.Columns>
+        </DataGrid>
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Width="60" Height="30" Margin="0,0,10,0" Content="导出" Command="{Binding AlarmReportFromExportCommand}"></Button>
         </StackPanel>
