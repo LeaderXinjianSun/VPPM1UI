@@ -541,7 +541,7 @@ namespace WpfApp1.ViewModel
                         {
                             if (AlarmSelectFormDt.Rows[i]["STARTTIME"] != DBNull.Value && AlarmSelectFormDt.Rows[i]["ENDTIME"] != DBNull.Value)
                             {
-                                var nowAlarm = AlarmStatictic.FirstOrDefault(s => s.Code == AlarmList[i].Code);
+                                var nowAlarm = AlarmStatictic.FirstOrDefault(s => s.Code == (string)AlarmSelectFormDt.Rows[i]["WARNID"]);
                                 if (nowAlarm == null)
                                 {
                                     AlarmReportFormViewModel newAlarm = new AlarmReportFormViewModel()
