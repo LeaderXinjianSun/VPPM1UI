@@ -183,6 +183,31 @@ namespace WpfApp1.ViewModel
                 this.RaisePropertyChanged("AlarmReportForm");
             }
         }
+
+        private ObservableCollection<AlarmReportFormViewModel> alarmReportFormTester;
+
+        public ObservableCollection<AlarmReportFormViewModel> AlarmReportFormTester
+        {
+            get { return alarmReportFormTester; }
+            set
+            {
+                alarmReportFormTester = value;
+                this.RaisePropertyChanged("AlarmReportFormTester");
+            }
+        }
+
+        private ObservableCollection<AlarmReportFormViewModel> alarmReportFormFeeder;
+
+        public ObservableCollection<AlarmReportFormViewModel> AlarmReportFormFeeder
+        {
+            get { return alarmReportFormFeeder; }
+            set
+            {
+                alarmReportFormFeeder = value;
+                this.RaisePropertyChanged("AlarmReportFormFeeder");
+            }
+        }
+
         private int alarmCout;
         public int AlarmCout
         {
@@ -487,6 +512,8 @@ namespace WpfApp1.ViewModel
         }
         private void AlarmReportFromExportCommandExecute()
         {
+            AlarmReportFormExecute();
+            //return;
             Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
             //dlg.FileName = "AlarmReport"; // Default file name
             //dlg.DefaultExt = ".xlsx"; // Default file extension
@@ -581,8 +608,25 @@ namespace WpfApp1.ViewModel
             }
             CheckDbButtonIsEnabled = true;
         }
+
+        private  void AlarmReportFormExecute()
+        {
+            try
+            {
+                AlarmReportFormTester = new ObservableCollection<AlarmReportFormViewModel>(AlarmReportForm.Where(s => s.Content.Contains("_测试机")));
+                AlarmReportFormFeeder = new ObservableCollection<AlarmReportFormViewModel>(AlarmReportForm.Where(s => !s.Content.Contains("_测试机")));
+            }
+            catch (Exception)
+            {
+
+             
+            }
+
+        }
+
         private  void ExportAlarmCommandExecute()
         {
+            
             Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
             //dlg.FileName = "AlarmReport"; // Default file name
             //dlg.DefaultExt = ".xlsx"; // Default file extension
@@ -653,7 +697,7 @@ namespace WpfApp1.ViewModel
         #region 自定义函数
         private void Init()
         {
-            Version = "1.0907";
+            Version = "1.1007";
             MessageStr = "";
             BigDataEditIsReadOnly = true;
             BigDataPeramEdit = "Edit";
@@ -675,12 +719,15 @@ namespace WpfApp1.ViewModel
             AlarmSelectEndtDate = DateTime.Now;
             AlarmStatictic = new ObservableCollection<AlarmReportFormViewModel>();
             CheckDbButtonIsEnabled = true;
+            AlarmReportFormTester= new ObservableCollection<AlarmReportFormViewModel>();
+            AlarmReportFormFeeder = new ObservableCollection<AlarmReportFormViewModel>();
             try
             {
                 using (StreamReader reader = new StreamReader(System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json")))
                 {
                     string json = reader.ReadToEnd();
                     AlarmReportForm = JsonConvert.DeserializeObject<ObservableCollection<AlarmReportFormViewModel>>(json);
+                    AlarmReportFormExecute();
                 }
             }
             catch (Exception ex)
@@ -1080,6 +1127,7 @@ namespace WpfApp1.ViewModel
                                         {
                                             nowAlarm.Count++;
                                         }
+                                        AlarmReportFormExecute();
                                         WriteToJson(AlarmReportForm, System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json"));
 
                                         string banci = GetBanci();
@@ -1121,6 +1169,7 @@ namespace WpfApp1.ViewModel
                                     {
                                         //nowAlarm.Count++;
                                         nowAlarm.TimeSpan += AlarmList[i].End - AlarmList[i].Start;
+                                        AlarmReportFormExecute();
                                         WriteToJson(AlarmReportForm, System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json"));
                                     }
                                     #region 上传
@@ -1156,8 +1205,9 @@ namespace WpfApp1.ViewModel
                     {
                         WriteAlarmtoExcel(Path.Combine("D:\\报警记录", "VPP报警统计" + LastBanci + ".xlsx"));
                         AlarmReportForm.Clear();
+                        AlarmReportFormExecute();
                         WriteToJson(AlarmReportForm, System.IO.Path.Combine(System.Environment.CurrentDirectory, "AlarmReportForm.json"));
-
+                        
                         //WriteStatetoExcel(Path.Combine("D:\\报警记录", "VPP时间统计" + LastBanci + ".xlsx"));
                         //MachineStateA.Clean();
                         //WriteToJson(MachineStateA, System.IO.Path.Combine(System.Environment.CurrentDirectory, "MachineStateA.json"));
@@ -1335,19 +1385,35 @@ namespace WpfApp1.ViewModel
             {
                 using (ExcelPackage package = new ExcelPackage())
                 {
-                    var ws = package.Workbook.Worksheets.Add("MySheet");
+                    var ws = package.Workbook.Worksheets.Add("上料机报警");
+                    var ws1 = package.Workbook.Worksheets.Add("测试机报警");
                     ws.Cells[1, 1].Value = "ID";
                     ws.Cells[1, 2].Value = "报警内容";
                     ws.Cells[1, 3].Value = "报警次数";
                     ws.Cells[1, 4].Value = "报警时长(分钟)";
                     ws.Cells[1, 5].Value = DateTime.Now.ToString();
-                    for (int i = 0; i < AlarmReportForm.Count; i++)
+                    for (int i = 0; i < AlarmReportFormFeeder.Count; i++)
                     {
-                        ws.Cells[i + 2, 1].Value = AlarmReportForm[i].Code;
-                        ws.Cells[i + 2, 2].Value = AlarmReportForm[i].Content;
-                        ws.Cells[i + 2, 3].Value = AlarmReportForm[i].Count;
-                        ws.Cells[i + 2, 4].Value = Math.Round(AlarmReportForm[i].TimeSpan.TotalMinutes, 1);
+                        ws.Cells[i + 2, 1].Value = AlarmReportFormFeeder[i].Code;
+                        ws.Cells[i + 2, 2].Value = AlarmReportFormFeeder[i].Content;
+                        ws.Cells[i + 2, 3].Value = AlarmReportFormFeeder[i].Count;
+                        ws.Cells[i + 2, 4].Value = Math.Round(AlarmReportFormFeeder[i].TimeSpan.TotalMinutes, 1);
                     }
+
+                    ws1.Cells[1, 1].Value = "ID";
+                    ws1.Cells[1, 2].Value = "报警内容";
+                    ws1.Cells[1, 3].Value = "报警次数";
+                    ws1.Cells[1, 4].Value = "报警时长(分钟)";
+                    ws1.Cells[1, 5].Value = DateTime.Now.ToString();
+                    for (int i = 0; i < AlarmReportFormTester.Count; i++)
+                    {
+                        ws1.Cells[i + 2, 1].Value = AlarmReportFormTester[i].Code;
+                        ws1.Cells[i + 2, 2].Value = AlarmReportFormTester[i].Content;
+                        ws1.Cells[i + 2, 3].Value = AlarmReportFormTester[i].Count;
+                        ws1.Cells[i + 2, 4].Value = Math.Round(AlarmReportFormTester[i].TimeSpan.TotalMinutes, 1);
+                    }
+
+
                     package.SaveAs(new FileInfo(filepath));
                 }
 
